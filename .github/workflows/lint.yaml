@@ -68,7 +68,7 @@ jobs:
   codeql:
     if: "${{ github.event_name == 'pull_request' }}"
     name: "Analyze with CodeQL"
-    runs-on: "depot-ubuntu-24.04-8"
+    runs-on: "depot-ubuntu-24.04" # Do not follow upstream with 8 core runner
     permissions:
       actions: "read"
       contents: "read"
