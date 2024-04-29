@@ -526,8 +526,8 @@ objects:
           - -v=4
           - --crd=false
           - --config
-          - /opt/operator/update-graph.yaml
-          image: ${IMAGE}:${IMAGE_TAG}
+          - /opt/operator/config.yaml
+          image: ghcr.io/authzed/spicedb-operator:v1.14.1
           livenessProbe:
             httpGet:
               path: /healthz
@@ -552,29 +552,27 @@ objects:
             timeoutSeconds: 15
           resources:
             limits:
-              cpu: 500m
-              memory: 512Mi
-            requests:
-              cpu: 40m
+              cpu: 250m
               memory: 128Mi
+            requests:
+              cpu: 20m
+              memory: 32Mi
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:
               drop:
               - ALL
             readOnlyRootFilesystem: true
+            runAsGroup: 
             runAsNonRoot: true
+            runAsUser: 
             seccompProfile:
               type: RuntimeDefault
           terminationMessagePolicy: FallbackToLogsOnError
         securityContext:
+          runAsGroup: 
           runAsNonRoot: true
+          runAsUser: 
           seccompProfile:
             type: RuntimeDefault
         serviceAccountName: spicedb-operator
-parameters:
-  - name: IMAGE
-    value: quay.io/cloudservices/kessel-spicedb-operator
-  - name: IMAGE_TAG
-    required: true
-    value: latest

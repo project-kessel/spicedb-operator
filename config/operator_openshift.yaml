@@ -36,7 +36,7 @@ spec:
           - --crd=false
           - --config
           - /opt/operator/config.yaml
-          image: quay.io/cloudservices/kessel-spicedb-operator:c85ae2c
+          image: ghcr.io/authzed/spicedb-operator:latest
           livenessProbe:
             httpGet:
               path: /healthz
@@ -61,12 +61,14 @@ spec:
             timeoutSeconds: 15
           resources:
             limits:
-              cpu: "500m"
-              memory: "512Mi"
-            requests:
-              cpu: "40m"
+              cpu: "250m"
               memory: "128Mi"
+            requests:
+              cpu: "20m"
+              memory: "32Mi"
           securityContext:
+            runAsUser: 1001330000
+            runAsGroup: 1001330000
             runAsNonRoot: true
             readOnlyRootFilesystem: true
             seccompProfile:
@@ -77,6 +79,8 @@ spec:
                 - ALL
           terminationMessagePolicy: FallbackToLogsOnError
       securityContext:
+        runAsUser: 1001330000
+        runAsGroup: 1001330000
         runAsNonRoot: true
         seccompProfile:
           type: RuntimeDefault
