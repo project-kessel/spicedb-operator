@@ -4,7 +4,7 @@
 # documentation.
 
 # The default values used in the docker build commands are the root
-# directory '.' and the dockerfile name of 'Dockerfile'. If there is 
+# directory '.' and the dockerfile name of 'Dockerfile'. If there is
 # a need to change these do so in your local workflow template (this file) and
 # change them there. HINT: Look at the bottom of this file.
 
@@ -18,14 +18,14 @@
 # For more information about the Anchore SBOM tool, Syft, see
 # https://github.com/anchore/syft
 
-name: ConsoleDot Platform Security Scan
+name: "ConsoleDot Platform Security Scan"
 
 on:
   push:
-    branches: [ "main", "master" ]
+    branches: ["main", "master"]
   pull_request:
     # The branches below must be a subset of the branches above
-    branches: [ "main", "master" ]
+    branches: ["main", "master"]
 
 jobs:
   PlatSec-Security-Workflow:
