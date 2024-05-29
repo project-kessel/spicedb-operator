@@ -1,4 +1,4 @@
-# SpiceDB Operator
+# Porject Kessel - SpiceDB Operator Openshift Comptabile 
 
 [![Container Image](https://img.shields.io/github/v/release/authzed/spicedb-operator?color=%232496ED&label=container&logo=docker "Container Image")](https://hub.docker.com/r/authzed/spicedb-operator/tags)
 [![Docs](https://img.shields.io/badge/docs-authzed.com-%234B4B6C "Authzed Documentation")](https://docs.authzed.com)
@@ -162,7 +162,7 @@ status:
     description: direct update with no migrations
 ```
 
-Note that it can also show you updates that are available in other channels, if you wish to switch back and forth (be careful! if you switch to another channel and update, there may not be a path to get back to the original channel!) 
+Note that it can also show you updates that are available in other channels, if you wish to switch back and forth (be careful! if you switch to another channel and update, there may not be a path to get back to the original channel!)
 Only the nearest-neighbor update will be shown for channels other than the current one.
 
 ### Force Override
