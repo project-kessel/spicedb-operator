@@ -180,3 +180,4 @@ spec:
   config:
     image: ghcr.io/authzed/spicedb:v1.11.0-prerelease
 ```
+
