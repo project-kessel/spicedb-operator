@@ -162,7 +162,7 @@ status:
     description: direct update with no migrations
 ```
 
-Note that it can also show you updates that are available in other channels, if you wish to switch back and forth (be careful! if you switch to another channel and update, there may not be a path to get back to the original channel!)
+Note that it can also show you updates that are available in other channels, if you wish to switch back and forth (be careful! if you switch to another channel and update, there may not be a path to get back to the original channel!) 
 Only the nearest-neighbor update will be shown for channels other than the current one.
 
 ### Force Override
@@ -180,4 +180,3 @@ spec:
   config:
     image: ghcr.io/authzed/spicedb:v1.11.0-prerelease
 ```
-
