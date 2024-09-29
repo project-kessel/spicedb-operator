@@ -577,3 +577,4 @@ parameters:
     value: quay.io/cloudservices/kessel-spicedb-operator
   - name: IMAGE_TAG
     required: true
+    value: latest
