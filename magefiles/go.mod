@@ -4,7 +4,7 @@ go 1.20
 
 require (
 	github.com/cespare/xxhash/v2 v2.2.0
-	github.com/jzelinskie/stringz v0.0.1
+	github.com/jzelinskie/stringz v0.0.3
 	github.com/magefile/mage v1.15.0
 	github.com/maxbrunsfeld/counterfeiter/v6 v6.6.2
 	github.com/onsi/ginkgo/v2 v2.11.0
