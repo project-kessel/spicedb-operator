@@ -339,8 +339,8 @@ k8s.io/kube-openapi v0.0.0-20230717233707-2695361300d9 h1:LyMgNKD2P8Wn1iAwQU5Ohx
 k8s.io/kube-openapi v0.0.0-20230717233707-2695361300d9/go.mod h1:wZK2AVp1uHCp4VamDVgBP2COHZjqD1T68Rf0CM3YjSM=
 k8s.io/kubectl v0.28.3 h1:H1Peu1O3EbN9zHkJCcvhiJ4NUj6lb88sGPO5wrWIM6k=
 k8s.io/kubectl v0.28.3/go.mod h1:RDAudrth/2wQ3Sg46fbKKl4/g+XImzvbsSRZdP2RiyE=
-k8s.io/utils v0.0.0-20230726121419-3b25d923346b h1:sgn3ZU783SCgtaSJjpcVVlRqd6GSnlTLKgpAAttJvpI=
-k8s.io/utils v0.0.0-20230726121419-3b25d923346b/go.mod h1:OLgZIPagt7ERELqWJFomSt595RzquPNLL48iOWgYOg0=
+k8s.io/utils v0.0.0-20241210054802-24370beab758 h1:sdbE21q2nlQtFh65saZY+rRM6x6aJJI8IUa1AmH/qa0=
+k8s.io/utils v0.0.0-20241210054802-24370beab758/go.mod h1:OLgZIPagt7ERELqWJFomSt595RzquPNLL48iOWgYOg0=
 sigs.k8s.io/apiserver-network-proxy/konnectivity-client v0.28.1 h1:suc8HHvU5zDtc5N+CiGu1YG/ipwvkv7vPB9OUMUVjW8=
 sigs.k8s.io/apiserver-network-proxy/konnectivity-client v0.28.1/go.mod h1:o6mPitrlgUex6ZK5mp4VerN54SOVNzSWELwWnr8wep0=
 sigs.k8s.io/json v0.0.0-20221116044647-bc3834ca7abd h1:EDPBXCAspyGV4jQlpZSudPeMmr1bNJefnuqLsRAsHZo=
