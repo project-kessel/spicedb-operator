@@ -8,7 +8,7 @@ require (
 	github.com/evanphx/json-patch v5.7.0+incompatible
 	github.com/fatih/camelcase v1.0.0
 	github.com/go-logr/logr v1.3.0
-	github.com/jzelinskie/stringz v0.0.2
+	github.com/jzelinskie/stringz v0.0.3
 	github.com/spf13/cobra v1.8.0
 	github.com/stretchr/testify v1.8.4
 	go.uber.org/atomic v1.11.0
