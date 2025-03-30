@@ -11,7 +11,7 @@ require (
 	github.com/go-logr/zapr v1.2.3
 	github.com/go-sql-driver/mysql v1.7.0
 	github.com/jackc/pgx/v5 v5.2.0
-	github.com/jzelinskie/stringz v0.0.2
+	github.com/jzelinskie/stringz v0.0.3
 	github.com/nightlyone/lockfile v1.0.0
 	github.com/onsi/ginkgo/v2 v2.11.0
 	github.com/onsi/gomega v1.27.8
