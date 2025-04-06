@@ -1,6 +1,8 @@
 module github.com/authzed/spicedb-operator
 
-go 1.19
+go 1.23.0
+
+toolchain go1.23.8
 
 require (
 	github.com/authzed/controller-idioms v0.9.1
@@ -10,7 +12,7 @@ require (
 	github.com/go-logr/logr v1.3.0
 	github.com/jzelinskie/stringz v0.0.2
 	github.com/spf13/cobra v1.8.0
-	github.com/stretchr/testify v1.8.4
+	github.com/stretchr/testify v1.9.0
 	go.uber.org/atomic v1.11.0
 	golang.org/x/exp v0.0.0-20231006140011-7918f672742d
 	k8s.io/api v0.28.3
@@ -86,7 +88,7 @@ require (
 	github.com/stoewer/go-strcase v1.3.0 // indirect
 	github.com/xlab/treeprint v1.2.0 // indirect
 	go.etcd.io/etcd/api/v3 v3.5.10 // indirect
-	go.etcd.io/etcd/client/pkg/v3 v3.5.10 // indirect
+	go.etcd.io/etcd/client/pkg/v3 v3.5.21 // indirect
 	go.etcd.io/etcd/client/v3 v3.5.10 // indirect
 	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.45.0 // indirect
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.45.0 // indirect
@@ -104,7 +106,7 @@ require (
 	golang.org/x/net v0.17.0 // indirect
 	golang.org/x/oauth2 v0.13.0 // indirect
 	golang.org/x/sync v0.4.0 // indirect
-	golang.org/x/sys v0.13.0 // indirect
+	golang.org/x/sys v0.31.0 // indirect
 	golang.org/x/term v0.13.0 // indirect
 	golang.org/x/text v0.13.0 // indirect
 	golang.org/x/time v0.3.0 // indirect
