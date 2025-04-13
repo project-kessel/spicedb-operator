@@ -1,6 +1,8 @@
 module github.com/authzed/spicedb-operator/e2e
 
-go 1.20
+go 1.21
+
+toolchain go1.22.9
 
 require (
 	cloud.google.com/go/spanner v1.51.0
@@ -81,7 +83,7 @@ require (
 	github.com/google/gofuzz v1.2.0 // indirect
 	github.com/google/pprof v0.0.0-20230705174524-200ffdc848b8 // indirect
 	github.com/google/s2a-go v0.1.4 // indirect
-	github.com/google/safetext v0.0.0-20220905092116-b49f7bc46da2 // indirect
+	github.com/google/safetext v0.0.0-20240722112252-5a72de7e7962 // indirect
 	github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510 // indirect
 	github.com/google/uuid v1.4.0 // indirect
 	github.com/googleapis/enterprise-certificate-proxy v0.2.4 // indirect
@@ -106,6 +108,7 @@ require (
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/monochromegane/go-gitignore v0.0.0-20200626010858-205db1a8cc00 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
+	github.com/pborman/uuid v1.2.1 // indirect
 	github.com/pelletier/go-toml v1.9.4 // indirect
 	github.com/peterbourgon/diskv v2.0.1+incompatible // indirect
 	github.com/pkg/errors v0.9.1 // indirect
