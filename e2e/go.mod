@@ -1,6 +1,8 @@
 module github.com/authzed/spicedb-operator/e2e
 
-go 1.20
+go 1.23
+
+toolchain go1.23.8
 
 require (
 	cloud.google.com/go/spanner v1.51.0
@@ -156,7 +158,7 @@ require (
 	k8s.io/controller-manager v0.28.3 // indirect
 	k8s.io/kube-openapi v0.0.0-20230717233707-2695361300d9 // indirect
 	sigs.k8s.io/apiserver-network-proxy/konnectivity-client v0.28.1 // indirect
-	sigs.k8s.io/json v0.0.0-20221116044647-bc3834ca7abd // indirect
+	sigs.k8s.io/json v0.0.0-20241014173422-cfa47c3a1cc8 // indirect
 	sigs.k8s.io/kustomize/api v0.15.0 // indirect
 	sigs.k8s.io/kustomize/kyaml v0.15.0 // indirect
 	sigs.k8s.io/structured-merge-diff/v4 v4.4.1 // indirect
