@@ -7,6 +7,7 @@ ignore: |
   e2e/
   examples
   pkg/crds
+  .tekton/
 yaml-files:
   - "*.yaml"
   - "*.yml"
