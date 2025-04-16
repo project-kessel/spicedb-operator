@@ -21,6 +21,5 @@ FROM registry.access.redhat.com/ubi9/ubi-minimal:9.5-1742914212
 RUN microdnf install -y go-toolset
 
 COPY --from=builder /usr/local/bin/spicedb-operator /usr/local/bin/spicedb-operator
-COPY --from=builder /go/src/app/validated-update-graph.yaml /opt/operator/config.yaml
 
 ENTRYPOINT ["spicedb-operator"]
