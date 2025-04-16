@@ -43,6 +43,7 @@ import (
 	"k8s.io/utils/pointer"
 	clientconfig "sigs.k8s.io/controller-runtime/pkg/client/config"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
+	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/tools/setup-envtest/env"
 	"sigs.k8s.io/controller-runtime/tools/setup-envtest/remote"
 	"sigs.k8s.io/controller-runtime/tools/setup-envtest/store"
@@ -74,7 +75,7 @@ var (
 	archives           = strings.FieldsFunc(os.Getenv("ARCHIVES"), listsep)
 	images             = strings.FieldsFunc(os.Getenv("IMAGES"), listsep)
 	ProposedGraphFile  = stringz.DefaultEmpty(os.Getenv("PROPOSED_GRAPH_FILE"), "../proposed-update-graph.yaml")
-	ValidatedGraphFile = stringz.DefaultEmpty(os.Getenv("VALIDATED_GRAPH_FILE"), "../validated-update-graph.yaml")
+	ValidatedGraphFile = stringz.DefaultEmpty(os.Getenv("VALIDATED_GRAPH_FILE"), "../config/update-graph.yaml")
 	graphExtraConfig   = strings.FieldsFunc(os.Getenv("GRAPH_EXTRA_CONFIG"), listsep)
 
 	restConfig *rest.Config
@@ -84,6 +85,7 @@ var (
 
 func init() {
 	klog.InitFlags(nil)
+	log.SetLogger(klog.NewKlogr())
 
 	// Default operator logs to --v=4 and write to GinkgoWriter
 	if verbosity := flag.CommandLine.Lookup("v"); verbosity.Value.String() == "" {
@@ -251,19 +253,11 @@ func ConfigureApiserver() {
 	Expect(err).To(Succeed())
 	log := zapr.NewLogger(zapLog)
 
-	// no darwin arm builds yet
-	// see: https://github.com/kubernetes-sigs/kubebuilder/pull/2516
-
-	arch := runtime.GOARCH
-	if runtime.GOOS == "darwin" && runtime.GOARCH == "arm64" {
-		arch = "amd64"
-	}
 	e := &env.Env{
 		Log: log,
-		Client: &remote.Client{
-			Log:    log,
-			Bucket: "kubebuilder-tools",
-			Server: "storage.googleapis.com",
+		Client: &remote.HTTPClient{
+			Log:      log,
+			IndexURL: remote.DefaultIndexURL,
 		},
 		Version: versions.Spec{
 			Selector:    versions.TildeSelector{},
@@ -274,14 +268,14 @@ func ConfigureApiserver() {
 		Platform: versions.PlatformItem{
 			Platform: versions.Platform{
 				OS:   runtime.GOOS,
-				Arch: arch,
+				Arch: runtime.GOARCH,
 			},
 		},
 		FS:    afero.Afero{Fs: afero.NewOsFs()},
 		Store: store.NewAt("../testbin"),
 		Out:   os.Stdout,
 	}
-	e.Version, err = versions.FromExpr("~1.22.1")
+	e.Version, err = versions.FromExpr("~1.32")
 	Expect(err).To(Succeed())
 
 	workflows.Use{

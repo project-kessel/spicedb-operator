@@ -1,4 +1,4 @@
-FROM golang:1.22-alpine3.18 AS builder
+FROM golang:1.23-alpine AS builder
 WORKDIR /go/src/app
 ENV CGO_ENABLED=0
 
@@ -8,6 +8,5 @@ RUN --mount=type=cache,target=/root/.cache/go-build --mount=type=cache,target=/g
 
 FROM cgr.dev/chainguard/static:latest
 
-COPY --from=builder /go/src/app/validated-update-graph.yaml /opt/operator/config.yaml
 COPY --from=builder /go/src/app/spicedb-operator /usr/local/bin/spicedb-operator
 ENTRYPOINT ["spicedb-operator"]

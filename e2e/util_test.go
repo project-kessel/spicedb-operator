@@ -48,7 +48,7 @@ func Tail(obj runtime.Object, assert func(g Gomega), writers ...io.Writer) {
 				In:     os.Stdin,
 				Out:    io.MultiWriter(writers...),
 				ErrOut: io.MultiWriter(writers...),
-			}, true)
+			})
 			logger.Follow = false
 			logger.IgnoreLogErrors = false
 			logger.Object = obj
@@ -140,7 +140,9 @@ func (c ClientGetter) ToRESTMapper() (meta.RESTMapper, error) {
 	}
 
 	mapper := restmapper.NewDeferredDiscoveryRESTMapper(dclient)
-	expander := restmapper.NewShortcutExpander(mapper, dclient)
+	expander := restmapper.NewShortcutExpander(mapper, dclient, func(s string) {
+		GinkgoWriter.Println(s)
+	})
 	return expander, nil
 }
 

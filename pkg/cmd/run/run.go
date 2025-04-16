@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/spf13/cobra"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/util/errors"
 	genericapiserver "k8s.io/apiserver/pkg/server"
@@ -44,6 +45,8 @@ type Options struct {
 	OperatorConfigPath    string
 
 	MetricNamespace string
+
+	WatchNamespaces []string
 }
 
 // RecommendedOptions builds a new options config with default values
@@ -77,8 +80,10 @@ func NewCmdRun(o *Options) *cobra.Command {
 	bootstrapFlags.StringVar(&o.BootstrapSpicedbsPath, "bootstrap-spicedbs", "", "set a path to a config file for spicedbs to load on start up.")
 	debugFlags := namedFlagSets.FlagSet("debug")
 	debugFlags.StringVar(&o.DebugAddress, "debug-address", o.DebugAddress, "address where debug information is served (/healthz, /metrics/, /debug/pprof, etc)")
-	o.ConfigFlags.AddFlags(namedFlagSets.FlagSet("kubernetes"))
 	o.DebugFlags.AddFlags(debugFlags)
+	kubernetesFlags := namedFlagSets.FlagSet("kubernetes")
+	kubernetesFlags.StringSliceVar(&o.WatchNamespaces, "watch-namespaces", []string{}, "set a comma-separated list of namespaces to watch for CRDs.")
+	o.ConfigFlags.AddFlags(kubernetesFlags)
 	globalFlags := namedFlagSets.FlagSet("global")
 	globalflag.AddGlobalFlags(globalFlags, cmd.Name())
 	globalFlags.StringVar(&o.OperatorConfigPath, "config", "", "set a path to the operator's config file (configure registries, image tags, etc)")
@@ -125,6 +130,11 @@ func (o *Options) Run(ctx context.Context, f cmdutil.Factory) error {
 		}
 	}
 
+	resources, err := f.OpenAPISchema()
+	if err != nil {
+		return err
+	}
+
 	registry := typed.NewRegistry()
 	eventSink := &typedcorev1.EventSinkImpl{Interface: kclient.CoreV1().Events("")}
 	broadcaster := record.NewBroadcaster()
@@ -143,7 +153,7 @@ func (o *Options) Run(ctx context.Context, f cmdutil.Factory) error {
 		controllers = append(controllers, staticSpiceDBController)
 	}
 
-	ctrl, err := controller.NewController(ctx, registry, dclient, kclient, o.OperatorConfigPath, broadcaster)
+	ctrl, err := controller.NewController(ctx, registry, dclient, kclient, resources, o.OperatorConfigPath, broadcaster, o.WatchNamespaces)
 	if err != nil {
 		return err
 	}
@@ -151,10 +161,16 @@ func (o *Options) Run(ctx context.Context, f cmdutil.Factory) error {
 
 	// register with metrics collector
 	spiceDBClusterMetrics := ctrlmetrics.NewConditionStatusCollector[*v1alpha1.SpiceDBCluster](o.MetricNamespace, "clusters", v1alpha1.SpiceDBClusterResourceName)
-	lister := typed.ListerFor[*v1alpha1.SpiceDBCluster](registry, typed.NewRegistryKey(controller.OwnedFactoryKey, v1alpha1ClusterGVR))
-	spiceDBClusterMetrics.AddListerBuilder(func() ([]*v1alpha1.SpiceDBCluster, error) {
-		return lister.List(labels.Everything())
-	})
+
+	if len(o.WatchNamespaces) == 0 {
+		o.WatchNamespaces = []string{corev1.NamespaceAll}
+	}
+	for _, n := range o.WatchNamespaces {
+		lister := typed.MustListerForKey[*v1alpha1.SpiceDBCluster](registry, typed.NewRegistryKey(controller.OwnedFactoryKey(n), v1alpha1ClusterGVR))
+		spiceDBClusterMetrics.AddListerBuilder(func() ([]*v1alpha1.SpiceDBCluster, error) {
+			return lister.List(labels.Everything())
+		})
+	}
 	legacyregistry.CustomMustRegister(spiceDBClusterMetrics)
 
 	if ctx.Err() != nil {
@@ -163,7 +179,7 @@ func (o *Options) Run(ctx context.Context, f cmdutil.Factory) error {
 
 	mgr := manager.NewManager(o.DebugFlags.DebuggingConfiguration, o.DebugAddress, broadcaster, eventSink)
 
-	return mgr.Start(ctx, controllers...)
+	return mgr.Start(ctx, make(chan struct{}, 1), controllers...)
 }
 
 // DisableClientRateLimits removes rate limiting against the apiserver; we

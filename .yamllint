@@ -4,10 +4,10 @@ ignore: |
   config/
   deploy/
   proposed-update-graph.yaml
-  validated-update-graph.yaml
   e2e/
   examples
   pkg/crds
+  .tekton/
 yaml-files:
   - "*.yaml"
   - "*.yml"
