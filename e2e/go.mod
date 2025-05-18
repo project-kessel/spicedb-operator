@@ -21,7 +21,7 @@ require (
 	github.com/spf13/afero v1.12.0
 	go.uber.org/zap v1.27.0
 	google.golang.org/api v0.217.0
-	google.golang.org/genproto v0.0.0-20250115164207-1a7da9e5054f
+	google.golang.org/genproto 5a2f75b736a9
 	google.golang.org/grpc v1.69.4
 	k8s.io/api v0.32.1
 	k8s.io/apiextensions-apiserver v0.32.1
