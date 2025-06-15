@@ -1,5 +1,5 @@
-github.com/authzed/controller-idioms v0.10.1-0.20250118143209-5257c6322607 h1:qx/iKiyM98XwbSCUaq4EGVHPbdrhyRj4U2zsqPlxEos=
-github.com/authzed/controller-idioms v0.10.1-0.20250118143209-5257c6322607/go.mod h1:c/tbDAadZslP9qgA7zHV/i6WgjvEtqy22Hs23QhUQbM=
+github.com/authzed/controller-idioms v0.11.0 h1:XX2mSP0I0hyUotkFgaQeQ3e0b4s/qhRVHGXINq2gOEM=
+github.com/authzed/controller-idioms v0.11.0/go.mod h1:c/tbDAadZslP9qgA7zHV/i6WgjvEtqy22Hs23QhUQbM=
 github.com/blang/semver/v4 v4.0.0 h1:1PFHFE6yCCTv8C1TeyNNarDzntLi7wMI5i/pzqYIsAM=
 github.com/blang/semver/v4 v4.0.0/go.mod h1:IbckMUScFkM3pff0VJDNKRiT6TG/YpiHIM2yvyW5YoQ=
 github.com/cespare/xxhash/v2 v2.3.0 h1:UL815xU9SqsFlibzuggzjXhog7bL6oX9BbNZnL2UFvs=

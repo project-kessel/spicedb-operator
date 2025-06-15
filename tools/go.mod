@@ -12,7 +12,7 @@ require (
 )
 
 require (
-	github.com/authzed/controller-idioms v0.10.1-0.20250118143209-5257c6322607 // indirect
+	github.com/authzed/controller-idioms v0.11.0 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/emicklei/go-restful/v3 v3.12.1 // indirect

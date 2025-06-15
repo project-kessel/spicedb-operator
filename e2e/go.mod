@@ -6,7 +6,7 @@ toolchain go1.23.4
 
 require (
 	cloud.google.com/go/spanner v1.73.0
-	github.com/authzed/controller-idioms v0.10.1-0.20250118143209-5257c6322607
+	github.com/authzed/controller-idioms v0.11.0
 	github.com/authzed/spicedb-operator v0.0.0-00010101000000-000000000000
 	github.com/fluxcd/cli-utils v0.36.0-flux.11
 	github.com/fluxcd/pkg/ssa v0.43.0
