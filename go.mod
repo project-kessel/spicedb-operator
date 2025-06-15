@@ -7,7 +7,7 @@ toolchain go1.23.4
 require (
 	github.com/authzed/controller-idioms v0.10.1-0.20250118143209-5257c6322607
 	github.com/cespare/xxhash/v2 v2.3.0
-	github.com/evanphx/json-patch v5.9.0+incompatible
+	github.com/evanphx/json-patch v5.9.11+incompatible
 	github.com/fatih/camelcase v1.0.0
 	github.com/go-logr/logr v1.4.2
 	github.com/jzelinskie/stringz v0.0.3
