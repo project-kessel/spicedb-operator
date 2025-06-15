@@ -2,7 +2,7 @@ module magefiles
 
 go 1.23.0
 
-toolchain go1.23.4
+toolchain go1.24.4
 
 require (
 	github.com/cespare/xxhash/v2 v2.3.0
