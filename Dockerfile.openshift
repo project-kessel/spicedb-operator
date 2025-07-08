@@ -1,4 +1,4 @@
-FROM registry.access.redhat.com/ubi9/ubi-minimal:9.6-1749489516 AS builder
+FROM registry.access.redhat.com/ubi9/ubi-minimal:9.6-1751286687 AS builder
 ARG TARGETARCH
 USER root
 RUN microdnf install -y tar gzip make which go-toolset
@@ -15,7 +15,7 @@ RUN --mount=type=cache,target=/root/.cache/go-build --mount=type=cache,target=/g
     go mod tidy && \
     GOEXPERIMENT=strictfipsruntime,boringcrypto GOOS=linux GOARCH=${TARGETARCH} go build -tags=fips_enabled -o /usr/local/bin/spicedb-operator ./cmd/...
 
-FROM registry.access.redhat.com/ubi9/ubi-minimal:9.6-1749489516
+FROM registry.access.redhat.com/ubi9/ubi-minimal:9.6-1751286687
 
 # installs RHEL fork of go to be able to validate with go tools for FIPS - likely not needed long term
 RUN microdnf install -y go-toolset
