@@ -20,7 +20,7 @@ require (
 	github.com/onsi/gomega v1.36.2
 	github.com/spf13/afero v1.12.0
 	go.uber.org/zap v1.27.0
-	google.golang.org/api v0.237.0
+	google.golang.org/api v0.242.0
 	google.golang.org/genproto v0.0.0-20250707201910-8d1bb00bc6a7
 	google.golang.org/grpc v1.73.0
 	k8s.io/api v0.32.1
