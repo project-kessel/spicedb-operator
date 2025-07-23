@@ -6,7 +6,7 @@ toolchain go1.23.4
 
 require (
 	cloud.google.com/go/spanner v1.83.0
-	github.com/authzed/controller-idioms v0.10.1-0.20250118143209-5257c6322607
+	github.com/authzed/controller-idioms v0.11.0
 	github.com/authzed/spicedb-operator v0.0.0-00010101000000-000000000000
 	github.com/fluxcd/cli-utils v0.36.0-flux.11
 	github.com/fluxcd/pkg/ssa v0.43.0
@@ -23,7 +23,7 @@ require (
 	google.golang.org/api v0.237.0
 	google.golang.org/genproto v0.0.0-20250707201910-8d1bb00bc6a7
 	google.golang.org/grpc v1.73.0
-	k8s.io/api v0.32.1
+	k8s.io/api v0.32.3
 	k8s.io/apiextensions-apiserver v0.32.1
 	k8s.io/apimachinery v0.32.3
 	k8s.io/apiserver v0.32.3
@@ -39,6 +39,7 @@ require (
 )
 
 require (
+	al.essio.dev/pkg/shellescape v1.5.1 // indirect
 	cel.dev/expr v0.23.0 // indirect
 	cloud.google.com/go v0.121.2 // indirect
 	cloud.google.com/go/auth v0.16.2 // indirect
