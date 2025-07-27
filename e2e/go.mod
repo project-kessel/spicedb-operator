@@ -10,7 +10,7 @@ require (
 	github.com/authzed/spicedb-operator v0.0.0-00010101000000-000000000000
 	github.com/fluxcd/cli-utils v0.36.0-flux.11
 	github.com/fluxcd/pkg/ssa v0.43.0
-	github.com/go-logr/logr v1.4.2
+	github.com/go-logr/logr v1.4.3
 	github.com/go-logr/zapr v1.3.0
 	github.com/go-sql-driver/mysql v1.8.1
 	github.com/jackc/pgx/v5 v5.7.2
@@ -22,7 +22,7 @@ require (
 	go.uber.org/zap v1.27.0
 	google.golang.org/api v0.237.0
 	google.golang.org/genproto v0.0.0-20250707201910-8d1bb00bc6a7
-	google.golang.org/grpc v1.73.0
+	google.golang.org/grpc v1.74.2
 	k8s.io/api v0.32.1
 	k8s.io/apiextensions-apiserver v0.32.1
 	k8s.io/apimachinery v0.32.1
@@ -39,7 +39,7 @@ require (
 )
 
 require (
-	cel.dev/expr v0.23.0 // indirect
+	cel.dev/expr v0.24.0 // indirect
 	cloud.google.com/go v0.121.2 // indirect
 	cloud.google.com/go/auth v0.16.2 // indirect
 	cloud.google.com/go/auth/oauth2adapt v0.2.8 // indirect
