@@ -17,9 +17,6 @@ RUN --mount=type=cache,target=/root/.cache/go-build --mount=type=cache,target=/g
 
 FROM registry.access.redhat.com/ubi9/ubi-minimal:9.6-1752587672
 
-# installs RHEL fork of go to be able to validate with go tools for FIPS - likely not needed long term
-RUN microdnf install -y go-toolset
-
 COPY --from=builder /usr/local/bin/spicedb-operator /usr/local/bin/spicedb-operator
 COPY --from=builder /go/src/app/config/update-graph.yaml /opt/operator/update-graph.yaml
 
