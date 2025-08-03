@@ -20,7 +20,7 @@ require (
 	github.com/onsi/gomega v1.36.2
 	github.com/spf13/afero v1.12.0
 	go.uber.org/zap v1.27.0
-	google.golang.org/api v0.237.0
+	google.golang.org/api v0.239.0
 	google.golang.org/genproto v0.0.0-20250707201910-8d1bb00bc6a7
 	google.golang.org/grpc v1.73.0
 	k8s.io/api v0.32.3
@@ -41,7 +41,7 @@ require (
 require (
 	al.essio.dev/pkg/shellescape v1.5.1 // indirect
 	cel.dev/expr v0.23.0 // indirect
-	cloud.google.com/go v0.121.2 // indirect
+	cloud.google.com/go v0.121.4 // indirect
 	cloud.google.com/go/auth v0.16.2 // indirect
 	cloud.google.com/go/auth/oauth2adapt v0.2.8 // indirect
 	cloud.google.com/go/compute/metadata v0.7.0 // indirect
