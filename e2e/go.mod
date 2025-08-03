@@ -18,7 +18,7 @@ require (
 	github.com/nightlyone/lockfile v1.0.0
 	github.com/onsi/ginkgo/v2 v2.22.2
 	github.com/onsi/gomega v1.36.2
-	github.com/spf13/afero v1.12.0
+	github.com/spf13/afero v1.14.0
 	go.uber.org/zap v1.27.0
 	google.golang.org/api v0.237.0
 	google.golang.org/genproto v0.0.0-20250707201910-8d1bb00bc6a7
