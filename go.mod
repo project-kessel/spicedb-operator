@@ -2,7 +2,7 @@ module github.com/authzed/spicedb-operator
 
 go 1.23.0
 
-toolchain go1.24.1
+toolchain go1.24.5
 
 require (
 	github.com/authzed/controller-idioms v0.11.0
