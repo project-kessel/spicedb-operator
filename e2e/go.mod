@@ -1,8 +1,8 @@
 module github.com/authzed/spicedb-operator/e2e
 
-go 1.23.0
+go 1.24.0
 
-toolchain go1.23.4
+toolchain go1.24.6
 
 require (
 	cloud.google.com/go/spanner v1.83.0
@@ -10,7 +10,7 @@ require (
 	github.com/authzed/spicedb-operator v0.0.0-00010101000000-000000000000
 	github.com/fluxcd/cli-utils v0.36.0-flux.11
 	github.com/fluxcd/pkg/ssa v0.43.0
-	github.com/go-logr/logr v1.4.2
+	github.com/go-logr/logr v1.4.3
 	github.com/go-logr/zapr v1.3.0
 	github.com/go-sql-driver/mysql v1.8.1
 	github.com/jackc/pgx/v5 v5.7.2
@@ -130,15 +130,15 @@ require (
 	go.etcd.io/etcd/api/v3 v3.5.17 // indirect
 	go.etcd.io/etcd/client/pkg/v3 v3.5.17 // indirect
 	go.etcd.io/etcd/client/v3 v3.5.17 // indirect
-	go.opentelemetry.io/auto/sdk v1.1.0 // indirect
+	go.opentelemetry.io/auto/sdk v1.2.1 // indirect
 	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.61.0 // indirect
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.61.0 // indirect
-	go.opentelemetry.io/otel v1.36.0 // indirect
+	go.opentelemetry.io/otel v1.38.0 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace v1.34.0 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc v1.34.0 // indirect
-	go.opentelemetry.io/otel/metric v1.36.0 // indirect
+	go.opentelemetry.io/otel/metric v1.38.0 // indirect
 	go.opentelemetry.io/otel/sdk v1.36.0 // indirect
-	go.opentelemetry.io/otel/trace v1.36.0 // indirect
+	go.opentelemetry.io/otel/trace v1.38.0 // indirect
 	go.opentelemetry.io/proto/otlp v1.5.0 // indirect
 	go.uber.org/atomic v1.11.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
