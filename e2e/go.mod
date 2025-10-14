@@ -2,7 +2,7 @@ module github.com/authzed/spicedb-operator/e2e
 
 go 1.23.0
 
-toolchain go1.23.4
+toolchain go1.25.3
 
 require (
 	cloud.google.com/go/spanner v1.83.0
