@@ -7,7 +7,7 @@ toolchain go1.23.4
 require (
 	github.com/authzed/spicedb-operator v0.0.0-00010101000000-000000000000
 	github.com/blang/semver/v4 v4.0.0
-	github.com/stretchr/testify v1.10.0
+	github.com/stretchr/testify v1.11.1
 	sigs.k8s.io/yaml v1.4.0
 )
 

@@ -14,7 +14,7 @@ require (
 	github.com/magefile/mage v1.15.0
 	github.com/samber/lo v1.49.1
 	github.com/spf13/cobra v1.9.1
-	github.com/stretchr/testify v1.10.0
+	github.com/stretchr/testify v1.11.1
 	go.uber.org/atomic v1.11.0
 	golang.org/x/exp v0.0.0-20250711185948-6ae5c78190dc
 	k8s.io/api v0.32.3
