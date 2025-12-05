@@ -5,7 +5,7 @@ go 1.24.0
 require (
 	cloud.google.com/go/spanner v1.85.0
 	github.com/authzed/controller-idioms v0.13.0
-	github.com/authzed/spicedb-operator v0.0.0-00010101000000-000000000000
+	github.com/authzed/spicedb-operator v1.21.0
 	github.com/fluxcd/cli-utils v0.36.0-flux.11
 	github.com/fluxcd/pkg/ssa v0.43.0
 	github.com/go-logr/logr v1.4.3
