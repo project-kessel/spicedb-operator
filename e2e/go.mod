@@ -29,7 +29,7 @@ require (
 	k8s.io/client-go v0.34.0-alpha.2
 	k8s.io/klog/v2 v2.130.1
 	k8s.io/kubectl v0.34.0-alpha.2
-	k8s.io/utils v0.0.0-20250604170112-4c0f3b243397
+	k8s.io/utils v0.0.0-20251002143259-bc988d571ff4
 	sigs.k8s.io/controller-runtime v0.20.0
 	sigs.k8s.io/controller-runtime/tools/setup-envtest v0.0.0-20250121065037-b2dbf6eaa9fa
 	sigs.k8s.io/kind v0.27.0
