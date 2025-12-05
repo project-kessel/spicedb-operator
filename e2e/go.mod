@@ -10,7 +10,7 @@ require (
 	github.com/fluxcd/pkg/ssa v0.43.0
 	github.com/go-logr/logr v1.4.3
 	github.com/go-logr/zapr v1.3.0
-	github.com/go-sql-driver/mysql v1.8.1
+	github.com/go-sql-driver/mysql v1.9.3
 	github.com/jackc/pgx/v5 v5.7.2
 	github.com/jzelinskie/stringz v0.0.3
 	github.com/nightlyone/lockfile v1.0.0
