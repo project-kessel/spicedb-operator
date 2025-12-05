@@ -61,6 +61,7 @@ var _ = Describe("SpiceDBClusters", func() {
 
 		AssertMigrationJobCleanup      func(owner string)
 		AssertServiceAccount           func(name string, annotations map[string]string, owner string)
+		AssertPDB                      func(name, owner string)
 		AssertHealthySpiceDBCluster    func(image, owner string, logMatcher types.GomegaMatcher)
 		AssertDependentResourceCleanup func(owner, secretName string)
 		AssertMigrationsCompleted      func(image, migration, phase, name, datastoreEngine string)
@@ -125,6 +126,7 @@ var _ = Describe("SpiceDBClusters", func() {
 
 		AssertMigrationJobCleanup = AssertMigrationJobCleanupFunc(ctx, testNamespace, kclient)
 		AssertServiceAccount = AssertServiceAccountFunc(ctx, testNamespace, kclient)
+		AssertPDB = AssertPDBFunc(ctx, testNamespace, kclient)
 		AssertHealthySpiceDBCluster = AssertHealthySpiceDBClusterFunc(ctx, testNamespace, kclient)
 		AssertDependentResourceCleanup = AssertDependentResourceCleanupFunc(ctx, testNamespace, kclient)
 		AssertMigrationsCompleted = AssertMigrationsCompletedFunc(ctx, testNamespace, kclient, client)
@@ -266,6 +268,28 @@ var _ = Describe("SpiceDBClusters", func() {
 					AssertMigrationJobCleanup(cluster.Name)
 				})
 
+				When("a custom base image is specified", func() {
+					BeforeEach(func() {
+						// Use docker.io registry to test custom base image functionality
+						cluster.Spec.BaseImage = "docker.io/authzed/spicedb"
+					})
+
+					It("uses the custom base image", func() {
+						AssertHealthySpiceDBCluster("", cluster.Name, Not(ContainSubstring("ERROR: kuberesolver")))
+
+						By("verifying the deployment uses the custom base image")
+						Eventually(func(g Gomega) {
+							deployments, err := kclient.AppsV1().Deployments(testNamespace).List(ctx, metav1.ListOptions{
+								LabelSelector: fmt.Sprintf("%s=%s,%s=%s", metadata.ComponentLabelKey, metadata.ComponentSpiceDBLabelValue, metadata.OwnerLabelKey, cluster.Name),
+							})
+							g.Expect(err).To(Succeed())
+							g.Expect(deployments.Items).To(HaveLen(1))
+							g.Expect(deployments.Items[0].Spec.Template.Spec.Containers).To(HaveLen(1))
+							g.Expect(deployments.Items[0].Spec.Template.Spec.Containers[0].Image).To(HavePrefix("docker.io/authzed/spicedb"))
+						}).Should(Succeed())
+					})
+				})
+
 				When("options are specified (TLS, ServiceAccount, default channel)", func() {
 					BeforeEach(func() {
 						// this installs from the head of the current channel, skip validating image
@@ -322,6 +346,7 @@ var _ = Describe("SpiceDBClusters", func() {
 
 						By("creating the serviceaccount")
 						AssertServiceAccount("spicedb-non-default", map[string]string{"authzed.com/e2e": "true"}, cluster.Name)
+						AssertPDB(cluster.Name+"-spicedb", cluster.Name)
 					})
 				})
 			})

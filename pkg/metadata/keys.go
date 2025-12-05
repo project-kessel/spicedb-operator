@@ -28,11 +28,17 @@ const (
 	ComponentRoleLabel              = "spicedb-role"
 	ComponentServiceLabel           = "spicedb-service"
 	ComponentRoleBindingLabel       = "spicedb-rolebinding"
+	ComponentPDBLabel               = "spicedb-pdb"
 	SpiceDBMigrationRequirementsKey = "authzed.com/spicedb-migration"
 	SpiceDBTargetMigrationKey       = "authzed.com/spicedb-target-migration"
 	SpiceDBSecretRequirementsKey    = "authzed.com/spicedb-secret" // nolint: gosec
 	SpiceDBConfigKey                = "authzed.com/spicedb-configuration"
 	FieldManager                    = "spicedb-operator"
+
+	KubernetesNameLabelKey      = "app.kubernetes.io/name"
+	KubernetesInstanceLabelKey  = "app.kubernetes.io/instance"
+	KubernetesComponentLabelKey = "app.kubernetes.io/component"
+	KubernetesVersionLabelKey   = "app.kubernetes.io/version"
 )
 
 var (

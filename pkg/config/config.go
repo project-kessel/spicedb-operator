@@ -12,16 +12,19 @@ import (
 	"github.com/authzed/controller-idioms/hash"
 	jsonpatch "github.com/evanphx/json-patch"
 	"github.com/fatih/camelcase"
+	"github.com/gosimple/slug"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/errors"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/apimachinery/pkg/util/validation"
 	utilyaml "k8s.io/apimachinery/pkg/util/yaml"
 	applyappsv1 "k8s.io/client-go/applyconfigurations/apps/v1"
 	applybatchv1 "k8s.io/client-go/applyconfigurations/batch/v1"
 	applycorev1 "k8s.io/client-go/applyconfigurations/core/v1"
 	applymetav1 "k8s.io/client-go/applyconfigurations/meta/v1"
+	applypolicyv1 "k8s.io/client-go/applyconfigurations/policy/v1"
 	applyrbacv1 "k8s.io/client-go/applyconfigurations/rbac/v1"
 	"k8s.io/kubectl/pkg/util/openapi"
 
@@ -104,11 +107,19 @@ func (r RawConfig) Pop(key string) string {
 		return ""
 	}
 	delete(r, key)
-	vs, ok := v.(string)
-	if !ok {
-		return ""
+
+	// Handle string values
+	if vs, ok := v.(string); ok {
+		return vs
 	}
-	return vs
+
+	// Handle boolean values by converting to string
+	if vb, ok := v.(bool); ok {
+		return strconv.FormatBool(vb)
+	}
+
+	// Handle other types by converting to string
+	return fmt.Sprintf("%v", v)
 }
 
 // Config holds all values required to create and manage a cluster.
@@ -222,7 +233,7 @@ func NewConfig(cluster *v1alpha1.SpiceDBCluster, globalConfig *OperatorConfig, s
 	// unless the current config is equal to the input.
 	image := imageKey.pop(config)
 
-	baseImage, targetSpiceDBVersion, state, err := globalConfig.ComputeTarget(globalConfig.ImageName, image, cluster.Spec.Version, cluster.Spec.Channel, datastoreEngine, cluster.Status.CurrentVersion, cluster.RolloutInProgress())
+	baseImage, targetSpiceDBVersion, state, err := globalConfig.ComputeTarget(globalConfig.ImageName, cluster.Spec.BaseImage, image, cluster.Spec.Version, cluster.Spec.Channel, datastoreEngine, cluster.Status.CurrentVersion, cluster.RolloutInProgress())
 	if err != nil {
 		errs = append(errs, err)
 	}
@@ -486,6 +497,7 @@ func (c *Config) ownerRef() *applymetav1.OwnerReferenceApplyConfiguration {
 func (c *Config) unpatchedServiceAccount() *applycorev1.ServiceAccountApplyConfiguration {
 	return applycorev1.ServiceAccount(c.ServiceAccountName, c.Namespace).
 		WithLabels(metadata.LabelsForComponent(c.Name, metadata.ComponentServiceAccountLabel)).
+		WithLabels(c.commonLabels(c.Name)).
 		WithAnnotations(c.ExtraServiceAccountAnnotations)
 }
 
@@ -502,6 +514,7 @@ func (c *Config) ServiceAccount() *applycorev1.ServiceAccountApplyConfiguration 
 func (c *Config) unpatchedRole() *applyrbacv1.RoleApplyConfiguration {
 	return applyrbacv1.Role(c.Name, c.Namespace).
 		WithLabels(metadata.LabelsForComponent(c.Name, metadata.ComponentRoleLabel)).
+		WithLabels(c.commonLabels(c.Name)).
 		WithRules(
 			applyrbacv1.PolicyRule().
 				WithAPIGroups("").
@@ -523,6 +536,7 @@ func (c *Config) Role() *applyrbacv1.RoleApplyConfiguration {
 func (c *Config) unpatchedRoleBinding() *applyrbacv1.RoleBindingApplyConfiguration {
 	return applyrbacv1.RoleBinding(c.Name, c.Namespace).
 		WithLabels(metadata.LabelsForComponent(c.Name, metadata.ComponentRoleBindingLabel)).
+		WithLabels(c.commonLabels(c.Name)).
 		WithRoleRef(applyrbacv1.RoleRef().
 			WithKind("Role").
 			WithName(c.Name),
@@ -545,6 +559,7 @@ func (c *Config) RoleBinding() *applyrbacv1.RoleBindingApplyConfiguration {
 func (c *Config) unpatchedService() *applycorev1.ServiceApplyConfiguration {
 	return applycorev1.Service(c.Name, c.Namespace).
 		WithLabels(metadata.LabelsForComponent(c.Name, metadata.ComponentServiceLabel)).
+		WithLabels(c.commonLabels(c.Name)).
 		WithSpec(applycorev1.ServiceSpec().
 			WithSelector(metadata.LabelsForComponent(c.Name, metadata.ComponentSpiceDBLabelValue)).
 			WithPorts(c.servicePorts()...),
@@ -669,17 +684,19 @@ func (c *Config) unpatchedMigrationJob(migrationHash string) *applybatchv1.JobAp
 
 	return applybatchv1.Job(c.jobName(migrationHash), c.Namespace).
 		WithLabels(metadata.LabelsForComponent(c.Name, metadata.ComponentMigrationJobLabelValue)).
+		WithLabels(c.commonLabels(c.Name)).
 		WithAnnotations(map[string]string{
 			metadata.SpiceDBMigrationRequirementsKey: migrationHash,
 		}).
 		WithSpec(applybatchv1.JobSpec().WithTemplate(
 			applycorev1.PodTemplateSpec().WithLabels(
 				metadata.LabelsForComponent(c.Name, metadata.ComponentMigrationJobLabelValue),
-			).WithLabels(
-				c.ExtraPodLabels,
-			).WithAnnotations(
-				c.ExtraPodAnnotations,
-			).WithSpec(applycorev1.PodSpec().WithServiceAccountName(c.ServiceAccountName).
+			).
+				WithLabels(c.commonLabels(c.Name)).
+				WithLabels(c.ExtraPodLabels).
+				WithAnnotations(
+					c.ExtraPodAnnotations,
+				).WithSpec(applycorev1.PodSpec().WithServiceAccountName(c.ServiceAccountName).
 				WithContainers(
 					applycorev1.Container().
 						WithName("migrate").
@@ -776,6 +793,7 @@ func (c *Config) unpatchedDeployment(migrationHash, secretHash string) *applyapp
 	name := deploymentName(c.Name)
 	return applyappsv1.Deployment(name, c.Namespace).
 		WithLabels(metadata.LabelsForComponent(c.Name, metadata.ComponentSpiceDBLabelValue)).
+		WithLabels(c.commonLabels(name)).
 		WithAnnotations(map[string]string{
 			metadata.SpiceDBMigrationRequirementsKey: migrationHash,
 		}).
@@ -784,14 +802,14 @@ func (c *Config) unpatchedDeployment(migrationHash, secretHash string) *applyapp
 			WithStrategy(applyappsv1.DeploymentStrategy().
 				WithType(appsv1.RollingUpdateDeploymentStrategyType).
 				WithRollingUpdate(applyappsv1.RollingUpdateDeployment().WithMaxUnavailable(intstr.FromInt32(0)))).
-			WithSelector(applymetav1.LabelSelector().WithMatchLabels(map[string]string{"app.kubernetes.io/instance": name})).
+			WithSelector(applymetav1.LabelSelector().WithMatchLabels(map[string]string{metadata.KubernetesInstanceLabelKey: name})).
 			WithTemplate(applycorev1.PodTemplateSpec().
 				WithAnnotations(map[string]string{
 					metadata.SpiceDBSecretRequirementsKey: secretHash,
 					metadata.SpiceDBTargetMigrationKey:    c.MigrationConfig.TargetMigration,
 				}).
-				WithLabels(map[string]string{"app.kubernetes.io/instance": name}).
 				WithLabels(metadata.LabelsForComponent(c.Name, metadata.ComponentSpiceDBLabelValue)).
+				WithLabels(c.commonLabels(name)).
 				WithLabels(c.ExtraPodLabels).
 				WithAnnotations(c.ExtraPodAnnotations).
 				WithSpec(applycorev1.PodSpec().WithServiceAccountName(c.ServiceAccountName).WithContainers(
@@ -839,15 +857,76 @@ func (c *Config) Deployment(migrationHash, secretHash string) *applyappsv1.Deplo
 		WithAnnotations(map[string]string{
 			metadata.SpiceDBMigrationRequirementsKey: migrationHash,
 		})
-	d.Spec.Selector.WithMatchLabels(map[string]string{"app.kubernetes.io/instance": name})
+	d.Spec.Selector.WithMatchLabels(map[string]string{metadata.KubernetesInstanceLabelKey: name})
 	d.Spec.Template.
 		WithAnnotations(map[string]string{
 			metadata.SpiceDBSecretRequirementsKey: secretHash,
 			metadata.SpiceDBTargetMigrationKey:    c.MigrationConfig.TargetMigration,
 		}).
-		WithLabels(map[string]string{"app.kubernetes.io/instance": name}).
+		WithLabels(map[string]string{metadata.KubernetesInstanceLabelKey: name}).
 		WithLabels(metadata.LabelsForComponent(c.Name, metadata.ComponentSpiceDBLabelValue))
 	return d
+}
+
+func (c *Config) PodDisruptionBudget() *applypolicyv1.PodDisruptionBudgetApplyConfiguration {
+	name := pdbName(c.Name)
+	d := applypolicyv1.PodDisruptionBudget(name, c.Namespace)
+	unpatched := c.unpatchedPDB()
+	_, _, _ = ApplyPatches(unpatched, d, c.Patches, c.Resources)
+
+	// ensure patches don't overwrite anything critical for operator function
+	d.WithName(name).WithNamespace(c.Namespace).WithOwnerReferences(c.ownerRef()).
+		WithLabels(c.commonLabels(name)).
+		WithLabels(metadata.LabelsForComponent(c.Name, metadata.ComponentPDBLabel))
+	d.Spec.Selector.WithMatchLabels(map[string]string{metadata.KubernetesInstanceLabelKey: deploymentName(c.Name)})
+	return d
+}
+
+func (c *Config) unpatchedPDB() *applypolicyv1.PodDisruptionBudgetApplyConfiguration {
+	return applypolicyv1.PodDisruptionBudget(pdbName(c.Name), c.Namespace).
+		WithLabels(metadata.LabelsForComponent(c.Name, metadata.ComponentPDBLabel)).
+		WithSpec(applypolicyv1.PodDisruptionBudgetSpec().
+			WithSelector(applymetav1.LabelSelector().WithMatchLabels(
+				map[string]string{metadata.KubernetesInstanceLabelKey: deploymentName(c.Name)},
+			)).
+			// only allow one pod to be unavailable at a time
+			WithMaxUnavailable(intstr.FromInt32(1)),
+		)
+}
+
+func (c *Config) commonLabels(name string) map[string]string {
+	version := ""
+	if c.SpiceDBVersion != nil && c.SpiceDBVersion.Name != "" {
+		// Dots are valid label characters in Kubernetes labels
+		slug.CustomSub = map[string]string{
+			".": "__dot__",
+		}
+		// Use slug to clean the version name (removes spaces, special characters, etc.)
+		versionValue := slug.Make(c.SpiceDBVersion.Name)
+		// Replace the custom sub with a dot
+		versionValue = strings.ReplaceAll(versionValue, "__dot__", ".")
+
+		// Ensure the version is not too long for Kubernetes labels
+		if len(versionValue) > 63 {
+			versionValue = versionValue[:63]
+		}
+
+		if errs := validation.IsValidLabelValue(versionValue); len(errs) == 0 {
+			version = versionValue
+		}
+	}
+
+	cLabels := map[string]string{
+		metadata.KubernetesInstanceLabelKey:  name,
+		metadata.KubernetesNameLabelKey:      name,
+		metadata.KubernetesComponentLabelKey: metadata.ComponentSpiceDBLabelValue,
+	}
+
+	if version != "" {
+		cLabels[metadata.KubernetesVersionLabelKey] = version
+	}
+
+	return cLabels
 }
 
 // fixDeploymentPatches modifies any patches that could apply to the deployment
@@ -921,5 +1000,10 @@ func toEnvVarName(prefix string, key string) string {
 
 // deploymentName returns the name of the unpatchedDeployment given a SpiceDBCluster name
 func deploymentName(name string) string {
+	return fmt.Sprintf("%s-spicedb", name)
+}
+
+// pdbName returns the name of the unpatchedPDB given a SpiceDBCluster name
+func pdbName(name string) string {
 	return fmt.Sprintf("%s-spicedb", name)
 }
