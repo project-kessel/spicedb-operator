@@ -3,7 +3,7 @@ module github.com/authzed/spicedb-operator/e2e
 go 1.24.0
 
 require (
-	cloud.google.com/go/spanner v1.85.0
+	cloud.google.com/go/spanner v1.86.1
 	github.com/authzed/controller-idioms v0.13.0
 	github.com/authzed/spicedb-operator v0.0.0-00010101000000-000000000000
 	github.com/fluxcd/cli-utils v0.36.0-flux.11
