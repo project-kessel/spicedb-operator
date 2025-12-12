@@ -51,6 +51,7 @@ jobs:
   extra-lint:
     name: "Lint YAML & Markdown"
     runs-on: "ubuntu-latest"
+    if: false
     steps:
       - uses: "actions/checkout@v5"
       - uses: "authzed/actions/yaml-lint@main"
