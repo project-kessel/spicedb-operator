@@ -13,11 +13,11 @@ The table below captures high level changes to our fork from upstream and the re
 |Dependabot intervals changed to daily |This better aligns with other Kessel Services|
 |All active workflows defined by Authzed updated use the `ubuntu-latest` image for the runner|Authzed uses a custom self-hosted runner in their workflows which we don't have access to|
 |Build Test - Build Container Image workflow uses `Dockerfile.openshift` vs `Dockerfile`|This ensures the image build test uses our custom Dockerfile vs upstreams|
-|Non-critical workflows disabled or removed|Workflows that do not impact code functionality or Red Hat builds are disabled.<br><br> This includes:<br> * E2E test<br> * Yaml & Markdown Linting<br> *CLA workflow<br> * Release workflows|
+|Non-critical workflows disabled or removed|Workflows that do not impact code functionality or Red Hat builds are disabled.<br><br> This includes:<br> * E2E test<br> * Yaml & Markdown Linting<br> * CLA workflow<br> * Release workflows|
 |Added the security scanning workflow|Required ConsoleDot platform security workflow to check for CVE's in code and images|
 |Added push/pull tekton pipelines|Used for Konflux PR and merge builds|
 |Added Dockerfile.openshift|Dockerfile used by Konflux for building images, to comply with requirements of using UBI as the base image, and to ensure FIPS-compliant builds using Go Toolset|
-|`build-deploy.sh` script added|Legacy script used by App Interface for container image builds pre-Konflux. Still used for building images locally for testing operator updates|
+|`build_deploy.sh` script added|Legacy script used by App Interface for container image builds pre-Konflux. Still used for building images locally for testing operator updates|
 | `deploy/deploy.yml` added|This is the main deployment file for deploying SpiceDB Operator to OpenShift clusters. It contains all required CRD's, ClusterRoles/Bindings, and various Kubernetes objects required to run the operator that ship with a release from Authzed, but with key updates made to support running on OpenShift clusters (see below)|
 
 
@@ -53,7 +53,7 @@ The below table captures changes that diverge from the upstream bundle release. 
 
 |Change|Reason|
 |------|------|
-|Removed the `update-graph` ConfigMap|The `update-graph` is useful for defining the SpiceDB version to use for a cluster, and controlling automatic upgrades. Since build and use our own SpiceDB image, this feature is disabled in our `SpiceDbClusters` CR, so the ConfigMap is not needed|
+|Removed the `update-graph` ConfigMap|The `update-graph` is useful for defining the SpiceDB version to use for a cluster, and controlling automatic upgrades. Since we build and use our own SpiceDB image, this feature is disabled in our `SpiceDbClusters` CR, so the ConfigMap is not needed|
 |`spec.containers.image` has been updated to use the Red Hat built SpiceDB|This ensures the SpiceDB image running in clusters complies with Red Hat policies, and security standards|
 |CPU and Memory adjustments|The CPU and Memory requests/limits have been increased for our deployment needs|
 |`runAsUser` and `runAsGroup` directives from both container and pod `securityContexts` have been removed|These violate OpenShift security policies and prevent the image from running due to using the `nobody` user|
