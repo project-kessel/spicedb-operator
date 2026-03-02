@@ -50,7 +50,7 @@ jobs:
 
   extra-lint:
     name: "Lint YAML & Markdown"
-    runs-on: "depot-ubuntu-24.04"
+    runs-on: "ubuntu-latest"
     if: false
     steps:
       - uses: "actions/checkout@v5"
@@ -69,7 +69,7 @@ jobs:
   codeql:
     if: "${{ github.event_name == 'pull_request' }}"
     name: "Analyze with CodeQL"
-    runs-on: "depot-ubuntu-24.04" # Do not follow upstream with 8 core runner
+    runs-on: "ubuntu-latest" # Do not follow upstream with 8 core runner
     permissions:
       actions: "read"
       contents: "read"

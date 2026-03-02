@@ -96,7 +96,7 @@ jobs:
     needs: "paths-filter"
     if: false
     name: "E2E Tests"
-    runs-on: "depot-ubuntu-24.04" # Don't follow upstream with 8 core runner
+    runs-on: "ubuntu-latest" # Don't follow upstream with 8 core runner
     steps:
       - uses: "actions/checkout@v5"
         if: |
