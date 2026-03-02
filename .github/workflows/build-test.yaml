@@ -14,7 +14,7 @@ env:
   GO_VERSION: "~1.25"
 jobs:
   paths-filter:
-    runs-on: "depot-ubuntu-24.04"
+    runs-on: "ubuntu-latest"
     outputs:
       codechange: "${{ steps.filter.outputs.codechange }}"
       graphchange: "${{ steps.graph-filter.outputs.graphchange }}"
@@ -44,7 +44,7 @@ jobs:
     if: |
       needs.paths-filter.outputs.codechange == 'true'
     name: "Build Binary"
-    runs-on: "depot-ubuntu-24.04"
+    runs-on: "ubuntu-latest"
     steps:
       - uses: "actions/checkout@v5"
       - uses: "authzed/actions/setup-go@main"
@@ -57,7 +57,7 @@ jobs:
     if: |
       needs.paths-filter.outputs.codechange == 'true'
     name: "Build Container Image"
-    runs-on: "depot-ubuntu-24.04"
+    runs-on: "ubuntu-latest"
     steps:
       - uses: "actions/checkout@v5"
       - uses: "authzed/actions/setup-go@main"
@@ -76,7 +76,7 @@ jobs:
     if: |
       needs.paths-filter.outputs.codechange == 'true'
     name: "Unit Tests"
-    runs-on: "depot-ubuntu-24.04"
+    runs-on: "ubuntu-latest"
     steps:
       - uses: "actions/checkout@v5"
         with:
