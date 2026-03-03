@@ -17,7 +17,7 @@ require (
 	github.com/onsi/ginkgo/v2 v2.22.2
 	github.com/onsi/gomega v1.36.2
 	github.com/spf13/afero v1.12.0
-	go.uber.org/zap v1.27.0
+	go.uber.org/zap v1.27.1
 	google.golang.org/api v0.247.0
 	google.golang.org/genproto v0.0.0-20250603155806-513f23925822
 	google.golang.org/grpc v1.74.2
