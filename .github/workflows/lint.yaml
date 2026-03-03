@@ -11,7 +11,7 @@ on:  # yamllint disable-line rule:truthy
     types:
       - "checks_requested"
 env:
-  GO_VERSION: "~1.22"
+  GO_VERSION: "~1.25"
 jobs:
   go-lint:
     name: "Lint Go"
@@ -69,7 +69,7 @@ jobs:
   codeql:
     if: "${{ github.event_name == 'pull_request' }}"
     name: "Analyze with CodeQL"
-    runs-on: "ubuntu-latest"
+    runs-on: "ubuntu-latest" # Do not follow upstream with 8 core runner
     permissions:
       actions: "read"
       contents: "read"
