@@ -11,7 +11,7 @@ require (
 	github.com/gosimple/slug v1.15.0
 	github.com/jzelinskie/stringz v0.0.3
 	github.com/magefile/mage v1.15.0
-	github.com/samber/lo v1.49.1
+	github.com/samber/lo v1.53.0
 	github.com/spf13/cobra v1.9.1
 	github.com/stretchr/testify v1.11.1
 	go.uber.org/atomic v1.11.0
