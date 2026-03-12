@@ -10,7 +10,7 @@ require (
 	github.com/go-logr/logr v1.4.3
 	github.com/gosimple/slug v1.15.0
 	github.com/jzelinskie/stringz v0.0.3
-	github.com/magefile/mage v1.15.0
+	github.com/magefile/mage v1.16.1
 	github.com/samber/lo v1.49.1
 	github.com/spf13/cobra v1.9.1
 	github.com/stretchr/testify v1.11.1
