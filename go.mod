@@ -25,7 +25,7 @@ require (
 	k8s.io/controller-manager v0.34.0-alpha.2
 	k8s.io/klog/v2 v2.130.1
 	k8s.io/kubectl v0.34.0-alpha.2
-	k8s.io/utils v0.0.0-20250604170112-4c0f3b243397
+	k8s.io/utils v0.0.0-20260210185600-b8788abfbbc2
 	sigs.k8s.io/kind v0.27.0
 )
 
