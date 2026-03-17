@@ -10,7 +10,7 @@ The table below captures high level changes to our fork from upstream and the re
 
 |Change|Reason|
 |------|------|
-|Dependabot intervals changed to daily |This better aligns with other Kessel Services|
+|The dependabot.yml file has been removed to disable Dependabot|This better aligns with Red Hat mandates to leverage Konflux|
 |All active workflows defined by Authzed updated use the `ubuntu-latest` image for the runner|Authzed uses a custom self-hosted runner in their workflows which we don't have access to|
 |Build Test - Build Container Image workflow uses `Dockerfile.openshift` vs `Dockerfile`|This ensures the image build test uses our custom Dockerfile vs upstreams|
 |Non-critical workflows disabled or removed|Workflows that do not impact code functionality or Red Hat builds are disabled.<br><br> This includes:<br> * E2E test<br> * Yaml & Markdown Linting<br> * CLA workflow<br> * Release workflows|
