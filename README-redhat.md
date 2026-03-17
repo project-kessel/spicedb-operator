@@ -53,6 +53,7 @@ The below table captures changes that diverge from the upstream bundle release. 
 
 |Change|Reason|
 |------|------|
+|Added the `renovate.json` file|This configures Mintmaker (part of Konflux) to prevent Go pkg update PRs and move to weekly updates for Dockerfile base image updates|
 |Removed the `update-graph` ConfigMap|The `update-graph` is useful for defining the SpiceDB version to use for a cluster, and controlling automatic upgrades. Since we build and use our own SpiceDB image, this feature is disabled in our `SpiceDbClusters` CR, so the ConfigMap is not needed|
 |`spec.containers.image` has been updated to use the Red Hat built SpiceDB|This ensures the SpiceDB image running in clusters complies with Red Hat policies, and security standards|
 |CPU and Memory adjustments|The CPU and Memory requests/limits have been increased for our deployment needs|
