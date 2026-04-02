@@ -8,6 +8,10 @@ See `README-redhat.md` for a full list of Red Hat-specific changes and their rat
 This fork is periodically synced from upstream using a merge-based workflow.
 See `SYNC.md` for the currently synced upstream tag.
 
+To run a full sync, use the `/sync-upstream <TAG>` command (Claude Code) or
+trigger the `upstream-sync` skill (Cursor). Both reference the same process
+documented below and in `.cursor/skills/upstream-sync/SKILL.md`.
+
 ### Merge Conflict Resolution Rules
 
 When merging upstream changes, resolve conflicts using the **Merge Action** column
