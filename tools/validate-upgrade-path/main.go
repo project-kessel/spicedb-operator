@@ -2,6 +2,8 @@ package main
 
 import (
 	"fmt"
+	"io"
+	"net/http"
 	"os"
 	"strings"
 
@@ -115,7 +117,7 @@ USAGE:
   built-in update mechanism, to ensure you don't skip required migration steps.
 
 FLAGS:
-  -g, --graph FILE        Path to update-graph.yaml (default: config/update-graph.yaml)
+  -g, --graph SOURCE      Path or URL to update-graph.yaml (default: config/update-graph.yaml)
   -d, --datastore NAME    Datastore type: postgres, cockroachdb, mysql, spanner, memory
                           (default: postgres)
       --list-datastores   List available datastores and exit
@@ -132,6 +134,9 @@ EXAMPLES:
   # Use a different graph file (e.g. from an upstream bundle)
   validate-upgrade-path -g /path/to/update-graph.yaml v1.29.5 v1.35.3
 
+  # Use the graph directly from GitHub
+  validate-upgrade-path -g https://raw.githubusercontent.com/project-kessel/spicedb-operator/refs/heads/main/config/update-graph.yaml --list-versions
+
   # List available datastores
   validate-upgrade-path --list-datastores
 
@@ -140,10 +145,28 @@ EXAMPLES:
 `)
 }
 
-func loadGraph(path string) (*config.OperatorConfig, error) {
-	data, err := os.ReadFile(path)
-	if err != nil {
-		return nil, err
+func loadGraph(source string) (*config.OperatorConfig, error) {
+	var data []byte
+	var err error
+
+	if strings.HasPrefix(source, "http://") || strings.HasPrefix(source, "https://") {
+		resp, err := http.Get(source)
+		if err != nil {
+			return nil, fmt.Errorf("fetching %s: %w", source, err)
+		}
+		defer resp.Body.Close()
+		if resp.StatusCode != http.StatusOK {
+			return nil, fmt.Errorf("fetching %s: HTTP %d", source, resp.StatusCode)
+		}
+		data, err = io.ReadAll(resp.Body)
+		if err != nil {
+			return nil, fmt.Errorf("reading response from %s: %w", source, err)
+		}
+	} else {
+		data, err = os.ReadFile(source)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	var opConfig config.OperatorConfig
@@ -152,7 +175,7 @@ func loadGraph(path string) (*config.OperatorConfig, error) {
 	}
 
 	if len(opConfig.Channels) == 0 {
-		return nil, fmt.Errorf("no channels found in %s", path)
+		return nil, fmt.Errorf("no channels found in %s", source)
 	}
 
 	return &opConfig, nil
