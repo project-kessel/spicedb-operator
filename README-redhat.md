@@ -33,6 +33,7 @@ The table below captures all changes to our fork from upstream. Each entry inclu
 | `Makefile` | Added | Build tooling for Red Hat-specific tools (e.g., `validate-upgrade-path`) | Red Hat only |
 | `tools/validate-upgrade-path/` | Added | CLI tool to validate SpiceDB upgrade paths against the operator's update graph. Useful for verifying upgrades when managing SpiceDB images outside the operator's built-in update mechanism | Red Hat only |
 | `.gitignore` | Updated to ignore `bin/` directory | Prevents built binaries from being committed | Re-apply |
+| `CLAUDE.md` | Replaced with our own | Contains Red Hat-specific merge conflict resolution rules for upstream syncs | Keep ours |
 | `README-redhat.md` | Added | Documents all Red Hat fork changes and rationale | Red Hat only |
 | `SYNC.md` | Added | Tracks the current upstream version synced to this fork | Red Hat only |
 | `.yamllint` | Added | YAML linting configuration | Red Hat only |

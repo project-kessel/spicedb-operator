@@ -94,7 +94,7 @@ fi
 
 # Verify the new tag exists locally
 if ! git -C "$REPO_ROOT" rev-parse "tags/$TAG" >/dev/null 2>&1; then
-    echo "Error: tag '$TAG' not found. Run 'git fetch authzed --tags' first." >&2
+    echo "Error: tag '$TAG' not found. Run 'git fetch upstream --tags' first." >&2
     exit 1
 fi
 
@@ -117,7 +117,7 @@ if [[ -z "$OLD_TAG" ]]; then
 fi
 
 if ! git -C "$REPO_ROOT" rev-parse "tags/$OLD_TAG" >/dev/null 2>&1; then
-    echo "Error: old tag '$OLD_TAG' not found. Run 'git fetch authzed --tags' first." >&2
+    echo "Error: old tag '$OLD_TAG' not found. Run 'git fetch upstream --tags' first." >&2
     exit 1
 fi
 

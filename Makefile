@@ -7,6 +7,10 @@ build-validate-upgrade-path: $(VALIDATE_UPGRADE_PATH) ## Build the validate-upgr
 $(VALIDATE_UPGRADE_PATH):
 	go build -C tools -o ../$(VALIDATE_UPGRADE_PATH) ./validate-upgrade-path/
 
+.PHONY: install-validate-upgrade-path
+install-validate-upgrade-path: ## Install validate-upgrade-path to $GOPATH/bin
+	go install -C tools ./validate-upgrade-path/
+
 .PHONY: clean
 clean: ## Remove built binaries
 	rm -rf $(BIN_DIR)
