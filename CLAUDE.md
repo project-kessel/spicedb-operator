@@ -26,7 +26,11 @@ new files introduced by upstream.
 **For `go.mod` and `go.sum` conflicts**: do not resolve these line-by-line. Instead,
 reset all `go.mod` and `go.sum` files to the upstream version entirely:
 ```
-git checkout sync-upstream-<tag> -- <all go.mod and go.sum files with conflicts>
+# Find all conflicting go.mod/go.sum/go.work files
+git diff --name-only --diff-filter=U --relative | grep -E "mod|sum|work"
+
+# Reset them to the upstream version
+git checkout sync-upstream-<tag> -- <file1> <file2> ...
 ```
 This ensures Go dependencies stay aligned with upstream, since git auto-merges
 non-conflicting lines and may preserve newer dependency versions from our fork

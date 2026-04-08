@@ -46,7 +46,13 @@ The current go-toolset version constraint is documented in `README-redhat.md`.
 4. Resolve any merge conflicts using the **Merge Action** column in the drift
    tracking table in `README-redhat.md`
 5. For `go.mod` and `go.sum` conflicts, reset to upstream entirely:
-   `git checkout sync-upstream-<tag> -- <all go.mod and go.sum files with conflicts>`
+   ```bash
+   # Find all conflicting go.mod/go.sum/go.work files
+   git diff --name-only --diff-filter=U --relative | grep -E "mod|sum|work"
+
+   # Reset them to the upstream version
+   git checkout sync-upstream-<tag> -- <file1> <file2> ...
+   ```
 6. For any file not listed in the table, accept the upstream (incoming) version
 
 ### Step 3: Update SYNC.md
