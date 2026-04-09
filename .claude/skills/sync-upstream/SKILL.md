@@ -33,7 +33,7 @@ fork is already up to date and stop.
 **Important**: Before proceeding, check the `go` directive in the upstream
 `go.mod` at the target tag:
 ```bash
-git show tags/<tag>:go.mod | head -5
+git show tags/<tag>:go.mod | grep -E '^go '
 ```
 If the Go version exceeds our go-toolset version, stop and report the issue.
 The current go-toolset version constraint is documented in `README-redhat.md`.
