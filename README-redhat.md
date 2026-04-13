@@ -6,19 +6,38 @@ This document captures all changes made by Red Hat that diverge from the upstrea
 
 ### Drift Tracking
 
-The table below captures high level changes to our fork from upstream and the reason for these changes.
+The table below captures all changes to our fork from upstream. Each entry includes the affected files, what changed, why, and how to handle conflicts during upstream syncs.
 
-|Change|Reason|
-|------|------|
-|Dependabot intervals changed to daily |This better aligns with other Kessel Services|
-|All active workflows defined by Authzed updated use the `ubuntu-latest` image for the runner|Authzed uses a custom self-hosted runner in their workflows which we don't have access to|
-|Build Test - Build Container Image workflow uses `Dockerfile.openshift` vs `Dockerfile`|This ensures the image build test uses our custom Dockerfile vs upstreams|
-|Non-critical workflows disabled or removed|Workflows that do not impact code functionality or Red Hat builds are disabled.<br><br> This includes:<br> * E2E test<br> * Yaml & Markdown Linting<br> * CLA workflow<br> * Release workflows|
-|Added the security scanning workflow|Required ConsoleDot platform security workflow to check for CVE's in code and images|
-|Added push/pull tekton pipelines|Used for Konflux PR and merge builds|
-|Added Dockerfile.openshift|Dockerfile used by Konflux for building images, to comply with requirements of using UBI as the base image, and to ensure FIPS-compliant builds using Go Toolset|
-|`build_deploy.sh` script added|Legacy script used by App Interface for container image builds pre-Konflux. Still used for building images locally for testing operator updates|
-| `deploy/deploy.yml` added|This is the main deployment file for deploying SpiceDB Operator to OpenShift clusters. It contains all required CRD's, ClusterRoles/Bindings, and various Kubernetes objects required to run the operator that ship with a release from Authzed, but with key updates made to support running on OpenShift clusters (see below)|
+**Merge actions:**
+- **Keep ours**: always preserve the Red Hat version of this file
+- **Re-apply**: accept upstream changes, then re-apply our specific modifications
+- **Delete**: file should not exist in our fork; remove if upstream re-adds it
+- **Red Hat only**: file exists only in our fork; no upstream equivalent
+
+| File(s) | Change | Reason | Merge Action |
+|---------|--------|--------|-------------|
+| `.github/dependabot.yml` | Removed | Aligns with Red Hat mandates to leverage Konflux | Delete |
+| `.github/renovate.json` | Replaced with our own config | Configures Mintmaker (part of Konflux) to prevent Go pkg update PRs and move to weekly updates for Dockerfile base image updates | Keep ours |
+| Active workflows in `.github/workflows/` | Runner changed to `ubuntu-latest` | Authzed uses custom self-hosted runners (`depot-*`, `buildjet-*`) which we don't have access to | Re-apply |
+| `.github/workflows/build-test.yaml` | Build Container Image job uses `Dockerfile.openshift` instead of `Dockerfile`; disabled E2E tests (`if: false`) | Ensures image build test uses our custom Dockerfile; E2E tests not critical for our builds | Re-apply |
+| `.github/workflows/lint.yaml` | Disabled YAML & Markdown linting (`if: false`) | Not critical to Red Hat builds | Re-apply |
+| `.github/workflows/cla.yaml` | Removed | Not applicable to our fork | Delete |
+| `.github/workflows/release.yaml` | Removed | Not applicable to our fork | Delete |
+| `.github/workflows/security-scanning.yml` | Added | Required ConsoleDot platform security workflow for CVE scanning | Red Hat only |
+| `.tekton/spicedb-operator-pull-request.yaml`, `.tekton/spicedb-operator-push.yaml` | Added | Konflux PR and merge build pipelines | Red Hat only |
+| `Dockerfile.openshift` | Added | FIPS-compliant builds using UBI base image and Go Toolset for Konflux | Red Hat only |
+| `build_deploy.sh` | Added | Legacy App Interface build script, still used for local image builds when testing operator updates | Red Hat only |
+| `deploy/deploy.yml` | Added | Main deployment file for SpiceDB Operator on OpenShift clusters with CRDs, RBAC, and customizations for OpenShift (see deployment table below) | Red Hat only |
+| `config/operator_openshift.yaml` | Added | OpenShift-specific operator configuration | Red Hat only |
+| `scripts/redhat-diff.sh` | Added | Script to isolate Red Hat-specific changes from upstream sync PRs for easier code review | Red Hat only |
+| `Makefile` | Added | Build tooling for Red Hat-specific tools (e.g., `validate-upgrade-path`) | Red Hat only |
+| `tools/validate-upgrade-path/` | Added | CLI tool to validate SpiceDB upgrade paths against the operator's update graph. Useful for verifying upgrades when managing SpiceDB images outside the operator's built-in update mechanism | Red Hat only |
+| `.gitignore` | Updated to ignore `bin/` directory | Prevents built binaries from being committed | Re-apply |
+| `CLAUDE.md` | Replaced with our own | Contains Red Hat-specific merge conflict resolution rules for upstream syncs | Keep ours |
+| `.claude/skills/sync-upstream/SKILL.md` | Added | Claude skill to handle the upstream syncing process | Red Hat only |
+| `README-redhat.md` | Added | Documents all Red Hat fork changes and rationale | Red Hat only |
+| `SYNC.md` | Added | Tracks the current upstream version synced to this fork | Red Hat only |
+| `.yamllint` | Added | YAML linting configuration | Red Hat only |
 
 
 &nbsp;
@@ -49,16 +68,15 @@ For more info on Go Toolset and FIPS certifications at Red Hat:
 
 Each release of the SpiceDB Operator includes a `bundle.yaml` that contains all the necessary resources and CRD’s to deploy the operator. The deployment file under `deploy/deploy.yml` incorporates the contents of the `bundle.yaml` with customizations that remove unwanted configurations and allow us to deploy into OpenShift clusters.
 
-The below table captures changes that diverge from the upstream bundle release. Each release of SpiceDB Operator will require a review of the bundle to pull in any changes required, which may require updating the below table.
+The below table captures changes in `deploy/deploy.yml` that diverge from the upstream bundle release. Each release of SpiceDB Operator will require a review of the bundle to pull in any changes required, which may require updating the below table.
 
-|Change|Reason|
-|------|------|
-|Added the `renovate.json` file|This configures Mintmaker (part of Konflux) to prevent Go pkg update PRs and move to weekly updates for Dockerfile base image updates|
-|Removed the `update-graph` ConfigMap|The `update-graph` is useful for defining the SpiceDB version to use for a cluster, and controlling automatic upgrades. Since we build and use our own SpiceDB image, this feature is disabled in our `SpiceDbClusters` CR, so the ConfigMap is not needed|
-|`spec.containers.image` has been updated to use the Red Hat built SpiceDB|This ensures the SpiceDB image running in clusters complies with Red Hat policies, and security standards|
-|CPU and Memory adjustments|The CPU and Memory requests/limits have been increased for our deployment needs|
-|`runAsUser` and `runAsGroup` directives from both container and pod `securityContexts` have been removed|These violate OpenShift security policies and prevent the image from running due to using the `nobody` user|
-|The `config` volume/volume mount has been removed|This volume is used to facilitate the `update-graph` ConfigMap which was also removed|
+| Change | Reason |
+|--------|--------|
+| Removed the `update-graph` ConfigMap | The `update-graph` is useful for defining the SpiceDB version to use for a cluster, and controlling automatic upgrades. Since we build and use our own SpiceDB image, this feature is disabled in our `SpiceDbClusters` CR, so the ConfigMap is not needed |
+| `spec.containers.image` updated to use Red Hat built SpiceDB | Ensures the SpiceDB image running in clusters complies with Red Hat policies and security standards |
+| CPU and Memory adjustments | Requests/limits have been increased for our deployment needs |
+| `runAsUser` and `runAsGroup` removed from container and pod `securityContexts` | These violate OpenShift security policies and prevent the image from running due to using the `nobody` user |
+| The `config` volume/volume mount removed | This volume facilitates the `update-graph` ConfigMap which was also removed |
 
 
 &nbsp;
@@ -80,10 +98,12 @@ Update `SYNC.md` as part of any PR that merges changes from the upstream [authze
 
 If changes are made to our fork that diverge from upstream that are not captured in this README, make sure to update this file with any relevant changes. Be sure to capture the change and reason in the table above.
 
-An easy way to capture differences is to use `git diff` and compare your synced branch to the upstream tag branch to see all differences between upstream and the current state.
+An easy way to capture differences is to use `scripts/redhat-diff.sh` which compares the merge branch against the upstream tag and shows only Red Hat-specific changes:
 
 ```bash
-# assumes you have an `upstream` remote for the upstream source code
-git checkout -b upstream-<tag> tags/<tag>
-git diff upstream-<tag>..<your-synced-branch>
+# Show summary of Red Hat changes for this sync
+./scripts/redhat-diff.sh --stat
+
+# Show all cumulative Red Hat changes vs upstream
+./scripts/redhat-diff.sh --all --stat
 ```
