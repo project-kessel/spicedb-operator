@@ -6,3 +6,5 @@ release/
 e2e/cluster-state/**
 e2e/*.lck
 e2e/*.lck.*
+bin/
+.claude/settings.local.json
