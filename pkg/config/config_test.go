@@ -2655,6 +2655,30 @@ func TestDeployment(t *testing.T) {
 		wantDeployment *applyappsv1.DeploymentApplyConfiguration
 	}{
 		{
+			name: "migration hash is preserved when migrations are not skipped",
+			cluster: v1alpha1.ClusterSpec{
+				SecretRef: "test-secret",
+				Config: json.RawMessage(`
+					{
+						"logLevel": "debug",
+						"datastoreEngine": "cockroachdb"
+					}
+				`),
+			},
+			secret: &corev1.Secret{Data: map[string][]byte{
+				"datastore_uri": []byte("uri"),
+				"preshared_key": []byte("psk"),
+			}},
+			wantDeployment: expectedDeployment(func(dep *applyappsv1.DeploymentApplyConfiguration) {
+				// migrations not skipped: the deployment must carry the real
+				// migration hash so check_migrations can tell it apart from a
+				// "skipped" deployment.
+				dep.WithAnnotations(map[string]string{
+					metadata.SpiceDBMigrationRequirementsKey: "1",
+				})
+			}),
+		},
+		{
 			name: "container name back compat: smp patch with old name",
 			cluster: v1alpha1.ClusterSpec{
 				SecretRef: "test-secret",
@@ -3734,7 +3758,10 @@ func expectedDeployment(apply ...func(dep *applyappsv1.DeploymentApplyConfigurat
 			metadata.KubernetesVersionLabelKey:   "v1",
 		}).
 		WithAnnotations(map[string]string{
-			metadata.SpiceDBMigrationRequirementsKey: "1",
+			// every TestDeployment case below sets skipMigrations: true, so the
+			// deployment must advertise "skipped" rather than the real migration
+			// hash (otherwise check_migrations would treat it as already migrated).
+			metadata.SpiceDBMigrationRequirementsKey: "skipped",
 		}).
 		WithOwnerReferences(applymetav1.OwnerReference().
 			WithName("test").
