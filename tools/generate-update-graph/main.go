@@ -374,7 +374,7 @@ func mysqlChannel() updates.Channel {
 
 func spannerChannel() updates.Channel {
 	releases := []updates.State{
-		{ID: "v1.52.0", Tag: "v1.54.0", Migration: "add-expiration-support"},
+		{ID: "v1.54.0", Tag: "v1.54.0", Migration: "add-expiration-support"},
 		{ID: "v1.51.1", Tag: "v1.52.0", Migration: "add-expiration-support"},
 		{ID: "v1.49.2", Tag: "v1.51.1", Migration: "add-expiration-support"},
 		{ID: "v1.48.0", Tag: "v1.48.0", Migration: "add-expiration-support"},
@@ -419,8 +419,7 @@ func spannerChannel() updates.Channel {
 		{ID: "v1.8.0", Tag: "v1.8.0", Migration: "add-metadata-and-counters"},
 	}
 	edgePatterns := map[string]string{
-		"v1.52.0":        ">=1.54.0",
-		"v1.51.1":        ">=1.52.0",
+		"v1.51.1":        ">=1.54.0",
 		"v1.49.2":        ">=1.51.1",
 		"v1.48.0":        ">=1.49.2",
 		"v1.47.1":        ">=1.48.0",
