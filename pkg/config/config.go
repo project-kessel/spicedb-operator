@@ -1002,10 +1002,20 @@ func (c *Config) Deployment(migrationHash, secretHash string) *applyappsv1.Deplo
 	}
 
 	// ensure patches don't overwrite anything critical for operator function
+	//
+	// When migrations are skipped the deployment must not claim the real
+	// migration hash: check_migrations treats a deployment carrying the target
+	// hash as proof migrations already ran, so stamping the real hash here
+	// (overriding unpatchedDeployment's "skipped") causes a later
+	// migrations-required reconcile to skip the migration job entirely.
+	migrationAnnotation := migrationHash
+	if c.SkipMigrations {
+		migrationAnnotation = "skipped"
+	}
 	d.WithName(name).WithNamespace(c.Namespace).WithOwnerReferences(c.ownerRef()).
 		WithLabels(metadata.LabelsForComponent(c.Name, metadata.ComponentSpiceDBLabelValue)).
 		WithAnnotations(map[string]string{
-			metadata.SpiceDBMigrationRequirementsKey: migrationHash,
+			metadata.SpiceDBMigrationRequirementsKey: migrationAnnotation,
 		})
 	d.Spec.Selector.WithMatchLabels(map[string]string{metadata.KubernetesInstanceLabelKey: name})
 	d.Spec.Template.
