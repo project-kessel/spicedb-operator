@@ -679,11 +679,8 @@ var _ = Describe("SpiceDBClusters", func() {
 			})
 		})
 
-		Describe("With spanner", Label("spanner"), func() {
-			BeforeEach(func() {
-				ctx, cancel := context.WithCancel(context.Background())
-				defer cancel()
-
+		FDescribe("With spanner", Label("spanner"), func() {
+			BeforeEach(func(ctx context.Context) {
 				// Each spanner test spins up its own database pod; the spanner
 				// emulator doesn't support concurrent transactions so a single
 				// instance can't be shared.

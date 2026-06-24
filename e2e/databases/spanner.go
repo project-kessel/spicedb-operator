@@ -15,8 +15,8 @@ import (
 	//revive:disable:dot-imports convention is dot-import
 	. "github.com/onsi/gomega"
 	"google.golang.org/api/option"
-	adminpb "google.golang.org/genproto/googleapis/spanner/admin/database/v1"
-	"google.golang.org/genproto/googleapis/spanner/admin/instance/v1"
+	adminpb "cloud.google.com/go/spanner/admin/database/apiv1/databasepb"
+	instance "cloud.google.com/go/spanner/admin/instance/apiv1/instancepb"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"k8s.io/apimachinery/pkg/api/meta"

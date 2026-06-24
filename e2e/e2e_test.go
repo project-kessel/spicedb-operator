@@ -40,7 +40,7 @@ import (
 	"k8s.io/client-go/restmapper"
 	"k8s.io/klog/v2"
 	cmdutil "k8s.io/kubectl/pkg/cmd/util"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 	clientconfig "sigs.k8s.io/controller-runtime/pkg/client/config"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 	"sigs.k8s.io/controller-runtime/pkg/log"
@@ -307,7 +307,7 @@ func ConfigureKube() {
 	// if we have a connection to an existing cluster or started a new one,
 	// we don't use envtest binaries (apiserver, etcd)
 	if restConfig != nil {
-		testEnv.UseExistingCluster = pointer.Bool(true)
+		testEnv.UseExistingCluster = ptr.To(true)
 		testEnv.Config = restConfig
 	}
 }
