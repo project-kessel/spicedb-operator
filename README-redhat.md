@@ -25,7 +25,7 @@ The table below captures all changes to our fork from upstream. Each entry inclu
 | `.github/workflows/release.yaml` | Removed | Not applicable to our fork | Delete |
 | `.github/workflows/security-scanning.yml` | Added | Required ConsoleDot platform security workflow for CVE scanning | Red Hat only |
 | `.tekton/spicedb-operator-pull-request.yaml`, `.tekton/spicedb-operator-push.yaml` | Added | Konflux PR and merge build pipelines | Red Hat only |
-| `Dockerfile.openshift` | Added | FIPS-compliant builds using UBI base image and Go Toolset for Konflux | Red Hat only |
+| `Dockerfile.openshift` | Added | FIPS-compliant builds using Hummingbird base images for Konflux | Red Hat only |
 | `build_deploy.sh` | Added | Legacy App Interface build script, still used for local image builds when testing operator updates | Red Hat only |
 | `deploy/deploy.yml` | Added | Main deployment file for SpiceDB Operator on OpenShift clusters with CRDs, RBAC, and customizations for OpenShift (see deployment table below) | Red Hat only |
 | `config/operator_openshift.yaml` | Added | OpenShift-specific operator configuration | Red Hat only |
@@ -44,24 +44,17 @@ The table below captures all changes to our fork from upstream. Each entry inclu
 
 ### More on our Dockerfile and Builds
 
-**UBI Base Images**
+**Hummingbird Base Images**
 
-To comply with [Red Hat Software Certification policies](https://docs.redhat.com/en/documentation/red_hat_software_certification/2025/html-single/red_hat_openshift_software_certification_policy_guide/index#con-image-content-requirements_openshift-sw-cert-policy-container-images), UBI images are used as the base image for both building and running the container image. This ensures images are built to Red Hat security standards, comply with our build processes, and ensures that application runtime dependencies, such as operating system components and libraries, are covered under the customer’s subscription (where applicable). Our current UBI base image specifically targets RHEL 9.x to ensure it contains [FIPS-validated cryptographic modules](https://access.redhat.com/compliance/fips) for running in FedRAMP environments.
+Our Dockerfiles use Red Hat Hummingbird images for both building and running the container. The builder stage uses `registry.access.redhat.com/hi/go:x.y.z-fips`, which provides a Go toolchain that automatically embeds a validated FIPS module into all compiled binaries. The runtime stage uses `registry.access.redhat.com/hi/core-runtime:x.y.z-openssl-fips`, a minimal image with OpenSSL FIPS support. At runtime, `GODEBUG=fips140=on` is set to activate FIPS mode.
 
-
-**Go Toolset**
-
-To ensure FIPS compliant binaries for running in FedRAMP environments, we leverage Go Toolset vs upstream Go for all builds. While upstream Go is currently [working on FIPS 140-3 certification](https://go.dev/blog/fips140), these modules are still in process and under review and therefore are not validated nor shipped with any RHEL products including UBI based images.
-
-Go Toolset leverages a fork of Go which is based on the upstream work to enable Go to link against the C library Boring Crypto. This fork uses OpenSSL instead of BoringSSL which is already FIPS validated on RHEL systems (hence the reliance on specific versions of UBI such as 9.x). When upstream Go has finished FIPS validation, it is expected that Go Toolset will converge to using upstream Go and will remain our install target long term on UBI images.
+This replaces the previous approach of UBI 9 base images with Go Toolset, `CGO_ENABLED=1`, `GOEXPERIMENT=strictfipsruntime,boringcrypto`, and the `fips_enabled` build tag. With Hummingbird, FIPS compliance is handled transparently by the Go toolchain and runtime image, eliminating the need for manual FIPS build flags.
 
 **Go and Base Image Updates**
 
-With our reliance on Go Toolset and FIPS-validated OpenSSL modules, our ability to sync upstream code changes can be limited due to Go versions used upstream. The version of Go listed in our `go.mod` file must not be greater than the [latest version](https://catalog.redhat.com/en/software/containers/ubi9/go-toolset/61e5c00b4ec9945c18787690) of Go Toolset available for the specific UBI version in use. This is required to remain FIPS compliant and have FIPS-validated OpenSSL modules. Base images must also be updated with care to ensure only validated versions of RHEL are used.
+The Go version in `go.mod` should be compatible with the version of Go available in the Hummingbird builder image (`hi/go`). Base images should be updated as new validated versions become available.
 
-For more info on Go Toolset and FIPS certifications at Red Hat:
-* [Golang-FIPS](https://github.com/golang-fips/go/blob/main/README.md)
-* [FIPS Mode for Red Hat Go Toolset](https://developers.redhat.com/articles/2025/01/23/fips-mode-red-hat-go-toolset)
+For more info on FIPS compliance at Red Hat:
 * [Red Hat FIPS Compliance](https://access.redhat.com/compliance/fips)
 
 **Deployment File**
