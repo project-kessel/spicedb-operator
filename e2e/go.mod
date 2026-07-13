@@ -1,6 +1,6 @@
 module github.com/authzed/spicedb-operator/e2e
 
-go 1.25.5
+go 1.25.6
 
 require (
 	cloud.google.com/go/spanner v1.85.0
@@ -19,7 +19,6 @@ require (
 	github.com/spf13/afero v1.12.0
 	go.uber.org/zap v1.27.0
 	google.golang.org/api v0.247.0
-	google.golang.org/genproto v0.0.0-20250603155806-513f23925822
 	google.golang.org/grpc v1.74.2
 	k8s.io/api v0.36.0-alpha.0
 	k8s.io/apiextensions-apiserver v0.34.0-alpha.2
@@ -151,6 +150,7 @@ require (
 	golang.org/x/text v0.40.0 // indirect
 	golang.org/x/time v0.12.0 // indirect
 	golang.org/x/tools v0.48.0 // indirect
+	google.golang.org/genproto v0.0.0-20250603155806-513f23925822 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20250818200422-3122310a409c // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20250818200422-3122310a409c // indirect
 	google.golang.org/protobuf v1.36.8 // indirect

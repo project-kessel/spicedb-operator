@@ -457,7 +457,7 @@ channels:
   name: stable
   nodes:
   - id: v1.54.0
-    migration: add-index-for-transaction-gc
+    migration: populate-schema-tables
     tag: v1.54.0
   - id: v1.52.0
     migration: add-index-for-transaction-gc
@@ -1137,7 +1137,7 @@ channels:
   name: stable
   nodes:
   - id: v1.54.0
-    migration: add-expiration-support
+    migration: populate-schema-tables
     tag: v1.54.0
   - id: v1.52.0
     migration: add-expiration-support
@@ -2225,7 +2225,7 @@ channels:
   name: stable
   nodes:
   - id: v1.54.0
-    migration: add-expiration-support
+    migration: populate-schema-tables
     tag: v1.54.0
   - id: v1.51.1
     migration: add-expiration-support

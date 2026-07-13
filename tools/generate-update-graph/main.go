@@ -44,7 +44,7 @@ func main() {
 
 func postgresChannel() updates.Channel {
 	releases := []updates.State{
-		{ID: "v1.54.0", Tag: "v1.54.0", Migration: "add-index-for-transaction-gc"},
+		{ID: "v1.54.0", Tag: "v1.54.0", Migration: "populate-schema-tables"},
 		{ID: "v1.52.0", Tag: "v1.52.0", Migration: "add-index-for-transaction-gc"},
 		{ID: "v1.51.1", Tag: "v1.51.1", Migration: "add-index-for-transaction-gc"},
 		{ID: "v1.49.2", Tag: "v1.49.2", Migration: "add-index-for-transaction-gc"},
@@ -160,7 +160,7 @@ func postgresChannel() updates.Channel {
 
 func crdbChannel() updates.Channel {
 	releases := []updates.State{
-		{ID: "v1.54.0", Tag: "v1.54.0", Migration: "add-expiration-support"},
+		{ID: "v1.54.0", Tag: "v1.54.0", Migration: "populate-schema-tables"},
 		{ID: "v1.52.0", Tag: "v1.52.0", Migration: "add-expiration-support"},
 		{ID: "v1.51.1", Tag: "v1.51.1", Migration: "add-expiration-support"},
 		{ID: "v1.49.2", Tag: "v1.49.2", Migration: "add-expiration-support"},
@@ -374,7 +374,7 @@ func mysqlChannel() updates.Channel {
 
 func spannerChannel() updates.Channel {
 	releases := []updates.State{
-		{ID: "v1.54.0", Tag: "v1.54.0", Migration: "add-expiration-support"},
+		{ID: "v1.54.0", Tag: "v1.54.0", Migration: "populate-schema-tables"},
 		{ID: "v1.51.1", Tag: "v1.52.0", Migration: "add-expiration-support"},
 		{ID: "v1.49.2", Tag: "v1.51.1", Migration: "add-expiration-support"},
 		{ID: "v1.48.0", Tag: "v1.48.0", Migration: "add-expiration-support"},

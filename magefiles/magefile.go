@@ -70,12 +70,11 @@ func (Test) E2e() error {
 	ginkgoArgs = append(ginkgoArgs, []string{"tool", "github.com/onsi/ginkgo/v2/ginkgo"}...)
 	ginkgoArgs = append(ginkgoArgs, Test{}.coverageFlags()...)
 	ginkgoArgs = append(ginkgoArgs, "--tags=e2e",
-	// Runs test in parallel
-	"-p",
-	// Recurses into directories
-	"-r",
-	"--timeout=5m",
-	"--fail-fast", "--randomize-all", "../e2e")
+		// Runs test in parallel
+		"-p",
+		// Recurses into directories
+		"-r",
+		"--fail-fast", "--randomize-all", "../e2e")
 	if err := runDirWithV("magefiles", map[string]string{
 		"PROVISION":            "true",
 		"SPICEDB_CMD":          os.Getenv("SPICEDB_CMD"),

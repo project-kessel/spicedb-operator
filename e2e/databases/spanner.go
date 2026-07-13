@@ -8,15 +8,13 @@ import (
 	"time"
 
 	database "cloud.google.com/go/spanner/admin/database/apiv1"
+	adminpb "cloud.google.com/go/spanner/admin/database/apiv1/databasepb"
 	instances "cloud.google.com/go/spanner/admin/instance/apiv1"
+	instance "cloud.google.com/go/spanner/admin/instance/apiv1/instancepb"
 	"github.com/go-logr/logr"
 	"github.com/nightlyone/lockfile"
-
-	//revive:disable:dot-imports convention is dot-import
 	. "github.com/onsi/gomega"
 	"google.golang.org/api/option"
-	adminpb "cloud.google.com/go/spanner/admin/database/apiv1/databasepb"
-	instance "cloud.google.com/go/spanner/admin/instance/apiv1/instancepb"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"k8s.io/apimachinery/pkg/api/meta"

@@ -1,6 +1,6 @@
 module github.com/authzed/spicedb-operator
 
-go 1.25.5
+go 1.25.6
 
 require (
 	github.com/authzed/controller-idioms v0.13.0

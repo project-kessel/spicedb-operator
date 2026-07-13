@@ -11,7 +11,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/authzed/controller-idioms/typed"
 	"github.com/go-logr/logr"
 	"github.com/go-logr/logr/funcr"
 	"github.com/jzelinskie/stringz"
@@ -30,6 +29,8 @@ import (
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/restmapper"
+
+	"github.com/authzed/controller-idioms/typed"
 
 	"github.com/authzed/spicedb-operator/e2e/databases"
 	"github.com/authzed/spicedb-operator/pkg/apis/authzed/v1alpha1"
@@ -679,7 +680,7 @@ var _ = Describe("SpiceDBClusters", func() {
 			})
 		})
 
-		FDescribe("With spanner", Label("spanner"), func() {
+		Describe("With spanner", Label("spanner"), func() {
 			BeforeEach(func(ctx context.Context) {
 				// Each spanner test spins up its own database pod; the spanner
 				// emulator doesn't support concurrent transactions so a single
