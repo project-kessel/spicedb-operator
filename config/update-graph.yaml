@@ -449,13 +449,15 @@ channels:
     v1.51.1:
     - v1.52.0
     - v1.54.0
+    v1.52.0:
+    - v1.54.0
   metadata:
     datastore: postgres
     default: "true"
   name: stable
   nodes:
   - id: v1.54.0
-    migration: add-index-for-transaction-gc
+    migration: populate-schema-tables
     tag: v1.54.0
   - id: v1.52.0
     migration: add-index-for-transaction-gc
@@ -1127,14 +1129,16 @@ channels:
     v1.51.1:
     - v1.52.0
     - v1.54.0
+    v1.52.0:
+    - v1.54.0
   metadata:
     datastore: cockroachdb
     default: "true"
   name: stable
   nodes:
   - id: v1.54.0
-    migration: add-expiration-support
-    tag: v1.52.0
+    migration: populate-schema-tables
+    tag: v1.54.0
   - id: v1.52.0
     migration: add-expiration-support
     tag: v1.52.0
@@ -1822,6 +1826,8 @@ channels:
     v1.51.1:
     - v1.52.0
     - v1.54.0
+    v1.52.0:
+    - v1.54.0
   metadata:
     datastore: mysql
     default: "true"
@@ -2158,6 +2164,7 @@ channels:
     - v1.48.0
     - v1.49.2
     - v1.51.1
+    - v1.54.0
     v1.38.0:
     - v1.39.1
     - v1.40.1
@@ -2167,6 +2174,7 @@ channels:
     - v1.48.0
     - v1.49.2
     - v1.51.1
+    - v1.54.0
     v1.39.1:
     - v1.40.1
     - v1.42.1
@@ -2175,6 +2183,7 @@ channels:
     - v1.48.0
     - v1.49.2
     - v1.51.1
+    - v1.54.0
     v1.40.1:
     - v1.42.1
     - v1.45.4
@@ -2182,33 +2191,41 @@ channels:
     - v1.48.0
     - v1.49.2
     - v1.51.1
+    - v1.54.0
     v1.42.1:
     - v1.45.4
     - v1.47.1
     - v1.48.0
     - v1.49.2
     - v1.51.1
+    - v1.54.0
     v1.45.4:
     - v1.47.1
     - v1.48.0
     - v1.49.2
     - v1.51.1
+    - v1.54.0
     v1.47.1:
     - v1.48.0
     - v1.49.2
     - v1.51.1
+    - v1.54.0
     v1.48.0:
     - v1.49.2
     - v1.51.1
+    - v1.54.0
     v1.49.2:
     - v1.51.1
+    - v1.54.0
+    v1.51.1:
+    - v1.54.0
   metadata:
     datastore: spanner
     default: "true"
   name: stable
   nodes:
-  - id: v1.52.0
-    migration: add-expiration-support
+  - id: v1.54.0
+    migration: populate-schema-tables
     tag: v1.54.0
   - id: v1.51.1
     migration: add-expiration-support
@@ -3460,6 +3477,8 @@ channels:
     - v1.54.0
     v1.51.1:
     - v1.52.0
+    - v1.54.0
+    v1.52.0:
     - v1.54.0
   metadata:
     datastore: memory
