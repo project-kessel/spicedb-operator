@@ -1,5 +1,4 @@
 //go:build mage
-// +build mage
 
 package main
 
@@ -70,7 +69,12 @@ func (Test) E2e() error {
 	ginkgoArgs := make([]string, 0, 20)
 	ginkgoArgs = append(ginkgoArgs, []string{"tool", "github.com/onsi/ginkgo/v2/ginkgo"}...)
 	ginkgoArgs = append(ginkgoArgs, Test{}.coverageFlags()...)
-	ginkgoArgs = append(ginkgoArgs, "--tags=e2e", "-p", "-r", "-vv", "--fail-fast", "--randomize-all", "--flake-attempts=3", "../e2e")
+	ginkgoArgs = append(ginkgoArgs, "--tags=e2e",
+		// Runs test in parallel
+		"-p",
+		// Recurses into directories
+		"-r",
+		"--fail-fast", "--randomize-all", "../e2e")
 	if err := runDirWithV("magefiles", map[string]string{
 		"PROVISION":            "true",
 		"SPICEDB_CMD":          os.Getenv("SPICEDB_CMD"),
