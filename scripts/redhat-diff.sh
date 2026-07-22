@@ -164,13 +164,6 @@ while IFS= read -r file; do
         continue
     fi
 
-    # Intentional Red Hat deletion of a file that exists upstream (including
-    # binaries whose diff has no +/- essence lines, e.g. the codecov uploader).
-    if ! file_exists_at_ref "$BRANCH" "$file" && file_exists_at_ref "tags/$TAG" "$file"; then
-        CHANGED_FILES+=("$file")
-        continue
-    fi
-
     old_delta=$(git -C "$REPO_ROOT" diff "tags/$OLD_TAG..$BASE" -- "$file" | diff_essence)
     new_delta=$(git -C "$REPO_ROOT" diff "tags/$TAG..$BRANCH" -- "$file" | diff_essence)
 
@@ -214,36 +207,13 @@ if [[ ${#CHANGED_FILES[@]} -eq 0 ]]; then
     exit 0
 fi
 
-# Build the review diff for changed files:
-# - Files that exist upstream: show Red Hat delta vs the new tag
-#   (full customization of that file after the sync, including intentional deletes).
-# - Red Hat-only files (not on the upstream tag): show BASE..BRANCH
-#   (only what actually changed in this sync — otherwise the whole file looks new).
-build_changed_diff() {
-    local stat_flag="${1:-}"
-    local out=""
-    local chunk
-    local f
-    for f in "${CHANGED_FILES[@]}"; do
-        if file_exists_at_ref "tags/$TAG" "$f"; then
-            chunk=$(git -C "$REPO_ROOT" diff $stat_flag "tags/$TAG..$BRANCH" -- "$f" || true)
-        else
-            chunk=$(git -C "$REPO_ROOT" diff $stat_flag "$BASE..$BRANCH" -- "$f" || true)
-        fi
-        if [[ -n "$chunk" ]]; then
-            out+="$chunk"$'\n'
-        fi
-    done
-    printf '%s' "$out"
-}
-
-# Generate the output
+# Generate the output: show the NEW Red Hat delta for changed files
 if [[ "$STAT_ONLY" == true ]]; then
-    build_changed_diff --stat
+    git -C "$REPO_ROOT" diff --stat "tags/$TAG..$BRANCH" -- "${CHANGED_FILES[@]}"
     exit 0
 fi
 
-DIFF_OUTPUT=$(build_changed_diff)
+DIFF_OUTPUT=$(git -C "$REPO_ROOT" diff "tags/$TAG..$BRANCH" -- "${CHANGED_FILES[@]}")
 
 if [[ -z "$DIFF_OUTPUT" ]]; then
     echo "No Red Hat-specific changes for this sync." >&2
@@ -252,7 +222,7 @@ fi
 
 # Post to PR or print to stdout
 if [[ -n "$PR_NUMBER" ]]; then
-    STAT_OUTPUT=$(build_changed_diff --stat)
+    STAT_OUTPUT=$(git -C "$REPO_ROOT" diff --stat "tags/$TAG..$BRANCH" -- "${CHANGED_FILES[@]}")
 
     WARNINGS_SECTION=""
     if [[ ${#STALE_FILES[@]} -gt 0 ]]; then
@@ -290,13 +260,13 @@ DIVERGED
     fi
 
     COMMENT_BODY=$(cat <<EOF
-## Red Hat-specific changes for this sync (\`$OLD_TAG\` → \`$TAG\`)
+## Red Hat-specific changes (vs upstream \`$TAG\`)
 
-Focus review on these changes — everything else is pure upstream or unchanged
-Red Hat modifications.
+These are the Red Hat-specific changes that were added or modified in this sync.
+Reviewers: focus your review on these changes -- everything else is from upstream
+or unchanged Red Hat modifications.
 
-- For files that exist upstream: shows our customization vs \`$TAG\`
-- For Red Hat-only files: shows the actual change vs \`$BASE\`
+Previously synced to: \`$OLD_TAG\`
 $WARNINGS_SECTION
 ### Summary
 \`\`\`
