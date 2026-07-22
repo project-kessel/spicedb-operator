@@ -91,10 +91,6 @@ jobs:
         with:
           version: "latest"
           args: "test:unit"
-      - name: "Upload coverage reports to Codecov"
-        uses: "codecov/codecov-action@v5"
-        with:
-          token: "${{ secrets.CODECOV_TOKEN }}"
 
   e2e:
     needs: "paths-filter"
@@ -125,10 +121,6 @@ jobs:
         with:
           version: "latest"
           args: "test:e2e"
-      - name: "Upload coverage reports to Codecov"
-        uses: "codecov/codecov-action@v5"
-        with:
-          token: "${{ secrets.CODECOV_TOKEN }}"
       - name: "Check if validated update graph has changed"
         if: |
           needs.paths-filter.outputs.graphchange == 'true'
