@@ -10,15 +10,6 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/authzed/controller-idioms/adopt"
-	"github.com/authzed/controller-idioms/cachekeys"
-	"github.com/authzed/controller-idioms/component"
-	"github.com/authzed/controller-idioms/fileinformer"
-	"github.com/authzed/controller-idioms/handler"
-	"github.com/authzed/controller-idioms/hash"
-	"github.com/authzed/controller-idioms/manager"
-	"github.com/authzed/controller-idioms/middleware"
-	"github.com/authzed/controller-idioms/typed"
 	"github.com/cespare/xxhash/v2"
 	"github.com/go-logr/logr"
 	"go.uber.org/atomic"
@@ -50,6 +41,16 @@ import (
 	"k8s.io/klog/v2"
 	"k8s.io/klog/v2/textlogger"
 	"k8s.io/kubectl/pkg/util/openapi"
+
+	"github.com/authzed/controller-idioms/adopt"
+	"github.com/authzed/controller-idioms/cachekeys"
+	"github.com/authzed/controller-idioms/component"
+	"github.com/authzed/controller-idioms/fileinformer"
+	"github.com/authzed/controller-idioms/handler"
+	"github.com/authzed/controller-idioms/hash"
+	"github.com/authzed/controller-idioms/manager"
+	"github.com/authzed/controller-idioms/middleware"
+	"github.com/authzed/controller-idioms/typed"
 
 	"github.com/authzed/spicedb-operator/pkg/apis/authzed/v1alpha1"
 	"github.com/authzed/spicedb-operator/pkg/config"
@@ -355,7 +356,7 @@ func (c *Controller) loadConfig(path string) {
 	}
 }
 
-func (c *Controller) enqueue(gvr schema.GroupVersionResource, obj interface{}) {
+func (c *Controller) enqueue(gvr schema.GroupVersionResource, obj any) {
 	key, err := cachekeys.GVRMetaNamespaceKeyFunc(gvr, obj)
 	if err != nil {
 		utilruntime.HandleError(err)
@@ -473,7 +474,7 @@ func credentialSecretsForCluster(cluster *v1alpha1.SpiceDBCluster) []credentialS
 // It queues the owning SpiceDBCluster for reconciliation based on the labels.
 // No other reconciliation should take place here; we keep a single state
 // machine for SpiceDBCluster with an entrypoint in the mainHandler Handler
-func (c *Controller) syncExternalResource(obj interface{}) {
+func (c *Controller) syncExternalResource(obj any) {
 	objMeta, err := meta.Accessor(obj)
 	if err != nil {
 		utilruntime.HandleError(err)
@@ -557,9 +558,28 @@ func (c *Controller) ensurePDB(next ...handler.Handler) handler.Handler {
 			},
 		)
 
+		cfg := CtxConfig.MustValue(ctx)
+
+		// If PDB is disabled, delete any existing PDB and skip creation
+		if cfg.PDB.Disabled {
+			clusterName := CtxClusterNN.MustValue(ctx).Name
+			expectedLabels := metadata.LabelsForComponent(clusterName, metadata.ComponentPDBLabel)
+			for _, pdb := range pdbComponent.List(ctx, CtxClusterNN.MustValue(ctx)) {
+				if !hasAllLabels(pdb.Labels, expectedLabels) {
+					logr.FromContextOrDiscard(ctx).V(4).Info("skipping pdb deletion: missing operator labels", "namespace", pdb.Namespace, "name", pdb.Name)
+					continue
+				}
+				nn := types.NamespacedName{Name: pdb.Name, Namespace: pdb.Namespace}
+				if err := deletePDB(ctx, nn); err != nil && !apierrors.IsNotFound(err) {
+					logr.FromContextOrDiscard(ctx).Error(err, "error deleting pdb")
+				}
+			}
+			handler.Handlers(next).MustOne().Handle(ctx)
+			return
+		}
+
 		// build the handler that ensures the PDB with the proper definition
 		// exists and run it
-		cfg := CtxConfig.MustValue(ctx)
 		component.NewEnsureComponentByHash(
 			component.NewHashableComponent(pdbComponent, hash.NewObjectHash(), "authzed.com/controller-component-hash"),
 			CtxClusterNN,
@@ -953,4 +973,13 @@ func (c *Controller) ensureService(next ...handler.Handler) handler.Handler {
 		}
 		handler.Handlers(next).MustOne().Handle(ctx)
 	}, "ensureService")
+}
+
+func hasAllLabels(actual, expected map[string]string) bool {
+	for k, v := range expected {
+		if actual[k] != v {
+			return false
+		}
+	}
+	return true
 }

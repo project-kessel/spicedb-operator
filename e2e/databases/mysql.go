@@ -10,7 +10,6 @@ import (
 	"github.com/go-logr/logr"
 	sqlDriver "github.com/go-sql-driver/mysql"
 	"github.com/nightlyone/lockfile"
-
 	//revive:disable:dot-imports convention is dot-import
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"

@@ -3,6 +3,7 @@
 [![Container Image](https://img.shields.io/github/v/release/authzed/spicedb-operator?color=%232496ED&label=container&logo=docker "Container Image")](https://hub.docker.com/r/authzed/spicedb-operator/tags)
 [![Docs](https://img.shields.io/badge/docs-authzed.com-%234B4B6C "Authzed Documentation")](https://docs.authzed.com)
 [![Build Status](https://github.com/authzed/spicedb-operator/workflows/Build%20&%20Test/badge.svg "GitHub Actions")](https://github.com/authzed/spicedb-operator/actions)
+[![Coverage](https://img.shields.io/codecov/c/github/authzed/spicedb-operator "Coverage")](https://app.codecov.io/gh/authzed/spicedb-operator)
 [![Discord Server](https://img.shields.io/discord/844600078504951838?color=7289da&logo=discord "Discord Server")](https://discord.gg/jTysUaxXzM)
 [![Twitter](https://img.shields.io/twitter/follow/authzed?color=%23179CF0&logo=twitter&style=flat-square "@authzed on Twitter")](https://twitter.com/authzed)
 
@@ -83,6 +84,55 @@ zed --insecure --endpoint=localhost:50051 --token=averysecretpresharedkey schema
 - Check out the [examples](examples) directory to see how to configure `SpiceDBCluster` for production, including datastore backends, TLS, and Ingress.
 - Learn how to use SpiceDB via the [docs](https://docs.authzed.com/) and [playground](https://play.authzed.com/).
 - Ask questions and join the community in [discord](https://authzed.com/discord).
+
+## Configuration
+
+### Datastore TLS Certificates
+
+If your datastore requires TLS client certificates for authentication, you can configure SpiceDB to use them via the `datastoreTLSSecretName` configuration option.
+
+When configured, the operator will mount the specified secret's contents at `/spicedb-db-tls` (read-only) in both the SpiceDB pods and migration jobs. You can then reference these certificate files in your `datastore_uri` connection string.
+
+#### Example: PostgreSQL/CockroachDB with TLS
+
+1. Create a Kubernetes secret containing your TLS certificates:
+
+```console
+kubectl create secret generic my-db-tls \
+  --from-file=ca.crt=/path/to/ca.crt \
+  --from-file=tls.crt=/path/to/client.crt \
+  --from-file=tls.key=/path/to/client.key
+```
+
+1. Configure your SpiceDBCluster to use the secret:
+
+```yaml
+apiVersion: authzed.com/v1alpha1
+kind: SpiceDBCluster
+metadata:
+  name: production
+spec:
+  config:
+    datastoreEngine: cockroachdb
+    datastoreTLSSecretName: my-db-tls
+  secretName: production-spicedb-config
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: production-spicedb-config
+stringData:
+  datastore_uri: "postgresql://user@db.example.com:26257/spicedb?sslmode=verify-full&sslrootcert=/spicedb-db-tls/ca.crt&sslcert=/spicedb-db-tls/tls.crt&sslkey=/spicedb-db-tls/tls.key"
+  preshared_key: "your-secret-key"
+```
+
+The certificates will be available at these paths inside the SpiceDB containers:
+
+- `/spicedb-db-tls/ca.crt` - CA certificate
+- `/spicedb-db-tls/tls.crt` - Client certificate
+- `/spicedb-db-tls/tls.key` - Client private key
+
+Note: The exact SSL parameter names depend on your datastore's connection driver. Consult your datastore's documentation for the correct connection string format.
 
 ## Automatic and Suggested Updates
 
