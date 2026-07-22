@@ -168,6 +168,12 @@ while IFS= read -r file; do
     new_delta=$(git -C "$REPO_ROOT" diff "tags/$TAG..$BRANCH" -- "$file" | diff_essence)
 
     if [[ "$old_delta" != "$new_delta" ]]; then
+        # Intentional Red Hat deletion of a file that exists upstream (e.g. codecov
+        # binaries): keep it in the Red Hat delta, do not treat as a merge artifact.
+        if ! file_exists_at_ref "$BRANCH" "$file" && file_exists_at_ref "tags/$TAG" "$file"; then
+            CHANGED_FILES+=("$file")
+            continue
+        fi
         # If the file had no Red Hat delta before but now differs from upstream,
         # and the file exists on the upstream tag, it's a merge artifact — the
         # merge produced content that doesn't match upstream exactly.
