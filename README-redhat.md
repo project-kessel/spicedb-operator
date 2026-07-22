@@ -19,8 +19,7 @@ The table below captures all changes to our fork from upstream. Each entry inclu
 | `.github/dependabot.yml` | Removed | Aligns with Red Hat mandates to leverage Konflux | Delete |
 | `.github/renovate.json` | Replaced with our own config | Configures Mintmaker (part of Konflux) to prevent Go pkg update PRs and move to weekly updates for Dockerfile base image updates | Keep ours |
 | Active workflows in `.github/workflows/` | Runner changed to `ubuntu-latest` | Authzed uses custom self-hosted runners (`depot-*`, `buildjet-*`) which we don't have access to | Re-apply |
-| `.github/workflows/build-test.yaml` | Build Container Image job uses `Dockerfile.openshift` instead of `Dockerfile`; disabled E2E tests (`if: false`); removed Codecov upload steps | Ensures image build test uses our custom Dockerfile; E2E tests and Codecov not used in our fork | Re-apply |
-| `codecov`, `codecov.SHA256SUM`, `codecov.SHA256SUM.sig` | Removed | Codecov uploader binary and checksums from upstream; not used without Codecov CI | Delete |
+| `.github/workflows/build-test.yaml` | Build Container Image job uses `Dockerfile.openshift` instead of `Dockerfile`; disabled E2E tests (`if: false`) | Ensures image build test uses our custom Dockerfile; E2E tests not critical for our builds | Re-apply |
 | `.github/workflows/lint.yaml` | Disabled YAML & Markdown linting (`if: false`) | Not critical to Red Hat builds | Re-apply |
 | `.github/workflows/cla.yaml` | Removed | Not applicable to our fork | Delete |
 | `.github/workflows/release.yaml` | Removed | Not applicable to our fork | Delete |
