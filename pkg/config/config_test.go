@@ -949,7 +949,7 @@ func TestNewConfig(t *testing.T) {
 					Config: json.RawMessage(`
 					{
 						"datastoreEngine": "cockroachdb",
-						"skipMigrations": true	
+						"skipMigrations": true
 					}
 				`),
 				},
@@ -1038,7 +1038,7 @@ func TestNewConfig(t *testing.T) {
 					Config: json.RawMessage(`
 					{
 						"datastoreEngine": "cockroachdb",
-						"skipMigrations": "true"	
+						"skipMigrations": "true"
 					}
 				`),
 				},
@@ -2138,6 +2138,191 @@ func TestNewConfig(t *testing.T) {
 			},
 			wantPortCount: 4,
 		},
+		{
+			name: "warns when version/channel are misplaced under .spec.config",
+			args: args{
+				cluster: v1alpha1.ClusterSpec{
+					SecretRef: "test-secret",
+					Config: json.RawMessage(`
+					{
+						"datastoreEngine": "cockroachdb",
+						"version": "ignored-version",
+						"channel": "ignored-channel"
+					}
+				`),
+				},
+				globalConfig: OperatorConfig{
+					ImageName: "image",
+					UpdateGraph: updates.UpdateGraph{
+						Channels: []updates.Channel{
+							{
+								Name:     "cockroachdb",
+								Metadata: map[string]string{"datastore": "cockroachdb", "default": "true"},
+								Nodes: []updates.State{
+									{ID: "v1", Tag: "v1"},
+								},
+								Edges: map[string][]string{"v1": {}},
+							},
+						},
+					},
+				},
+				secret: &corev1.Secret{Data: map[string][]byte{
+					"datastore_uri": []byte("uri"),
+					"preshared_key": []byte("psk"),
+				}},
+			},
+			wantWarnings: []error{
+				fmt.Errorf(".spec.config.version is ignored; use .spec.version instead"),
+				fmt.Errorf(".spec.config.channel is ignored; use .spec.channel instead"),
+				fmt.Errorf("no TLS configured, consider setting \"tlsSecretName\""),
+			},
+			want: &Config{
+				MigrationConfig: MigrationConfig{
+					MigrationLogLevel:  "debug",
+					DatastoreEngine:    "cockroachdb",
+					DatastoreURI:       "uri",
+					TargetSpiceDBImage: "image:v1",
+					EnvPrefix:          "SPICEDB",
+					SpiceDBCmd:         "spicedb",
+					TargetMigration:    "head",
+					SpiceDBVersion: &v1alpha1.SpiceDBVersion{
+						Name:    "v1",
+						Channel: "cockroachdb",
+						Attributes: []v1alpha1.SpiceDBVersionAttributes{
+							v1alpha1.SpiceDBVersionAttributesMigration,
+						},
+					},
+				},
+				SpiceConfig: SpiceConfig{
+					LogLevel:                     "info",
+					Name:                         "test",
+					Namespace:                    "test",
+					UID:                          "1",
+					Replicas:                     2,
+					PresharedKey:                 "psk",
+					EnvPrefix:                    "SPICEDB",
+					SpiceDBCmd:                   "spicedb",
+					ServiceAccountName:           "test",
+					DispatchEnabled:              true,
+					DispatchUpstreamCASecretPath: "tls.crt",
+					DatastoreURIRef:              ResolvedCredentialRef{SecretName: "test-secret", Key: "datastore_uri"},
+					PresharedKeyRef:              ResolvedCredentialRef{SecretName: "test-secret", Key: "preshared_key"},
+					MigrationSecretsRef:          ResolvedCredentialRef{SecretName: "test-secret", Key: "migration_secrets"},
+					ProjectLabels:                true,
+					ProjectAnnotations:           true,
+					Passthrough: map[string]string{
+						"datastoreEngine":        "cockroachdb",
+						"dispatchClusterEnabled": "true",
+						"terminationLogPath":     "/dev/termination-log",
+					},
+				},
+			},
+			wantEnvs: []string{
+				"SPICEDB_POD_NAME=FIELD_REF=metadata.name",
+				"SPICEDB_LOG_LEVEL=info",
+				"SPICEDB_GRPC_PRESHARED_KEY=preshared_key",
+				"SPICEDB_DATASTORE_CONN_URI=datastore_uri",
+				"SPICEDB_DISPATCH_UPSTREAM_ADDR=kubernetes:///test.test:dispatch",
+				"SPICEDB_DATASTORE_ENGINE=cockroachdb",
+				"SPICEDB_DISPATCH_CLUSTER_ENABLED=true",
+				"SPICEDB_TERMINATION_LOG_PATH=/dev/termination-log",
+			},
+			wantPortCount: 4,
+		},
+		{
+			name: "misplaced version/channel are ignored when correctly set at .spec",
+			args: args{
+				cluster: v1alpha1.ClusterSpec{
+					SecretRef: "test-secret",
+					Version:   "v1",
+					Channel:   "cockroachdb",
+					Config: json.RawMessage(`
+					{
+						"datastoreEngine": "cockroachdb",
+						"version": "v2",
+						"channel": "wrongchannel"
+					}
+				`),
+				},
+				globalConfig: OperatorConfig{
+					ImageName: "image",
+					UpdateGraph: updates.UpdateGraph{
+						Channels: []updates.Channel{
+							{
+								Name:     "cockroachdb",
+								Metadata: map[string]string{"datastore": "cockroachdb", "default": "true"},
+								Nodes: []updates.State{
+									{ID: "v2", Tag: "v2"},
+									{ID: "v1", Tag: "v1"},
+								},
+								Edges: map[string][]string{"v1": {"v2"}},
+							},
+						},
+					},
+				},
+				secret: &corev1.Secret{Data: map[string][]byte{
+					"datastore_uri": []byte("uri"),
+					"preshared_key": []byte("psk"),
+				}},
+			},
+			wantWarnings: []error{
+				fmt.Errorf(".spec.config.version is ignored; use .spec.version instead"),
+				fmt.Errorf(".spec.config.channel is ignored; use .spec.channel instead"),
+				fmt.Errorf("no TLS configured, consider setting \"tlsSecretName\""),
+			},
+			want: &Config{
+				MigrationConfig: MigrationConfig{
+					MigrationLogLevel:  "debug",
+					DatastoreEngine:    "cockroachdb",
+					DatastoreURI:       "uri",
+					TargetSpiceDBImage: "image:v1",
+					EnvPrefix:          "SPICEDB",
+					SpiceDBCmd:         "spicedb",
+					TargetMigration:    "head",
+					SpiceDBVersion: &v1alpha1.SpiceDBVersion{
+						Name:    "v1",
+						Channel: "cockroachdb",
+						Attributes: []v1alpha1.SpiceDBVersionAttributes{
+							v1alpha1.SpiceDBVersionAttributesMigration,
+						},
+					},
+				},
+				SpiceConfig: SpiceConfig{
+					LogLevel:                     "info",
+					Name:                         "test",
+					Namespace:                    "test",
+					UID:                          "1",
+					Replicas:                     2,
+					PresharedKey:                 "psk",
+					EnvPrefix:                    "SPICEDB",
+					SpiceDBCmd:                   "spicedb",
+					ServiceAccountName:           "test",
+					DispatchEnabled:              true,
+					DispatchUpstreamCASecretPath: "tls.crt",
+					DatastoreURIRef:              ResolvedCredentialRef{SecretName: "test-secret", Key: "datastore_uri"},
+					PresharedKeyRef:              ResolvedCredentialRef{SecretName: "test-secret", Key: "preshared_key"},
+					MigrationSecretsRef:          ResolvedCredentialRef{SecretName: "test-secret", Key: "migration_secrets"},
+					ProjectLabels:                true,
+					ProjectAnnotations:           true,
+					Passthrough: map[string]string{
+						"datastoreEngine":        "cockroachdb",
+						"dispatchClusterEnabled": "true",
+						"terminationLogPath":     "/dev/termination-log",
+					},
+				},
+			},
+			wantEnvs: []string{
+				"SPICEDB_POD_NAME=FIELD_REF=metadata.name",
+				"SPICEDB_LOG_LEVEL=info",
+				"SPICEDB_GRPC_PRESHARED_KEY=preshared_key",
+				"SPICEDB_DATASTORE_CONN_URI=datastore_uri",
+				"SPICEDB_DISPATCH_UPSTREAM_ADDR=kubernetes:///test.test:dispatch",
+				"SPICEDB_DATASTORE_ENGINE=cockroachdb",
+				"SPICEDB_DISPATCH_CLUSTER_ENABLED=true",
+				"SPICEDB_TERMINATION_LOG_PATH=/dev/termination-log",
+			},
+			wantPortCount: 4,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -2470,6 +2655,30 @@ func TestDeployment(t *testing.T) {
 		wantDeployment *applyappsv1.DeploymentApplyConfiguration
 	}{
 		{
+			name: "migration hash is preserved when migrations are not skipped",
+			cluster: v1alpha1.ClusterSpec{
+				SecretRef: "test-secret",
+				Config: json.RawMessage(`
+					{
+						"logLevel": "debug",
+						"datastoreEngine": "cockroachdb"
+					}
+				`),
+			},
+			secret: &corev1.Secret{Data: map[string][]byte{
+				"datastore_uri": []byte("uri"),
+				"preshared_key": []byte("psk"),
+			}},
+			wantDeployment: expectedDeployment(func(dep *applyappsv1.DeploymentApplyConfiguration) {
+				// migrations not skipped: the deployment must carry the real
+				// migration hash so check_migrations can tell it apart from a
+				// "skipped" deployment.
+				dep.WithAnnotations(map[string]string{
+					metadata.SpiceDBMigrationRequirementsKey: "1",
+				})
+			}),
+		},
+		{
 			name: "container name back compat: smp patch with old name",
 			cluster: v1alpha1.ClusterSpec{
 				SecretRef: "test-secret",
@@ -2649,7 +2858,7 @@ metadata:
 				Patches: []v1alpha1.Patch{{
 					Kind: "Deployment",
 					Patch: json.RawMessage(`
-      spec: 
+      spec:
         template: null
 `),
 				}},
@@ -2728,7 +2937,7 @@ metadata:
 				Patches: []v1alpha1.Patch{{
 					Kind: "Job",
 					Patch: json.RawMessage(`
-      spec: 
+      spec:
         template: null
 `),
 				}},
@@ -3183,9 +3392,11 @@ metadata:
 func TestPDB(t *testing.T) {
 	resources := newFakeResources()
 	tests := []struct {
-		name    string
-		cluster v1alpha1.ClusterSpec
-		wantPDB *applypolicyv1.PodDisruptionBudgetApplyConfiguration
+		name            string
+		cluster         v1alpha1.ClusterSpec
+		wantPDB         *applypolicyv1.PodDisruptionBudgetApplyConfiguration
+		wantPDBDisabled bool
+		wantErr         error
 	}{
 		{
 			name: "pdb sets maxUnavailable to 1",
@@ -3257,6 +3468,164 @@ metadata:
 						}),
 					).WithMaxUnavailable(intstr.FromInt32(1))),
 		},
+		{
+			name: "invalid pdb config returns error",
+			cluster: v1alpha1.ClusterSpec{
+				SecretRef: "test-secret",
+				Config: json.RawMessage(`
+					{
+						"datastoreEngine": "cockroachdb",
+						"pdb": "foo"
+					}
+				`),
+			},
+			wantErr: fmt.Errorf("expected object for key %q", pdbKey),
+		},
+		{
+			name: "invalid pdb.disabled value returns error",
+			cluster: v1alpha1.ClusterSpec{
+				SecretRef: "test-secret",
+				Config: json.RawMessage(`
+					{
+						"datastoreEngine": "cockroachdb",
+						"pdb": {
+							"disabled": 1
+						}
+					}
+				`),
+			},
+			wantErr: fmt.Errorf("expected bool or string for key disabled"),
+		},
+		{
+			name: "pdb disabled",
+			cluster: v1alpha1.ClusterSpec{
+				SecretRef: "test-secret",
+				Config: json.RawMessage(`
+					{
+						"datastoreEngine": "cockroachdb",
+						"pdb": {
+							"disabled": true
+						}
+					}
+				`),
+			},
+			wantPDBDisabled: true,
+		},
+		{
+			name: "pdb with custom maxUnavailable integer",
+			cluster: v1alpha1.ClusterSpec{
+				SecretRef: "test-secret",
+				Config: json.RawMessage(`
+					{
+						"datastoreEngine": "cockroachdb",
+						"pdb": {
+							"maxUnavailable": "2"
+						}
+					}
+				`),
+			},
+			wantPDB: applypolicyv1.PodDisruptionBudget("test-spicedb", "test").
+				WithLabels(metadata.LabelsForComponent("test", metadata.ComponentPDBLabel)).
+				WithLabels(map[string]string{
+					metadata.KubernetesInstanceLabelKey:  "test-spicedb",
+					metadata.KubernetesNameLabelKey:      "test-spicedb",
+					metadata.KubernetesComponentLabelKey: metadata.ComponentSpiceDBLabelValue,
+					metadata.KubernetesVersionLabelKey:   "v1",
+				}).
+				WithOwnerReferences(applymetav1.OwnerReference().
+					WithName("test").
+					WithKind(v1alpha1.SpiceDBClusterKind).
+					WithAPIVersion(v1alpha1.SchemeGroupVersion.String()).
+					WithUID("1")).
+				WithSpec(
+					applypolicyv1.PodDisruptionBudgetSpec().WithSelector(
+						applymetav1.LabelSelector().WithMatchLabels(map[string]string{
+							metadata.KubernetesInstanceLabelKey: "test-spicedb",
+						}),
+					).WithMaxUnavailable(intstr.FromInt32(2))),
+		},
+		{
+			name: "pdb with custom maxUnavailable percentage",
+			cluster: v1alpha1.ClusterSpec{
+				SecretRef: "test-secret",
+				Config: json.RawMessage(`
+					{
+						"datastoreEngine": "cockroachdb",
+						"pdb": {
+							"maxUnavailable": "50%"
+						}
+					}
+				`),
+			},
+			wantPDB: applypolicyv1.PodDisruptionBudget("test-spicedb", "test").
+				WithLabels(metadata.LabelsForComponent("test", metadata.ComponentPDBLabel)).
+				WithLabels(map[string]string{
+					metadata.KubernetesInstanceLabelKey:  "test-spicedb",
+					metadata.KubernetesNameLabelKey:      "test-spicedb",
+					metadata.KubernetesComponentLabelKey: metadata.ComponentSpiceDBLabelValue,
+					metadata.KubernetesVersionLabelKey:   "v1",
+				}).
+				WithOwnerReferences(applymetav1.OwnerReference().
+					WithName("test").
+					WithKind(v1alpha1.SpiceDBClusterKind).
+					WithAPIVersion(v1alpha1.SchemeGroupVersion.String()).
+					WithUID("1")).
+				WithSpec(
+					applypolicyv1.PodDisruptionBudgetSpec().WithSelector(
+						applymetav1.LabelSelector().WithMatchLabels(map[string]string{
+							metadata.KubernetesInstanceLabelKey: "test-spicedb",
+						}),
+					).WithMaxUnavailable(intstr.FromString("50%"))),
+		},
+		{
+			name: "pdb with custom minAvailable",
+			cluster: v1alpha1.ClusterSpec{
+				SecretRef: "test-secret",
+				Config: json.RawMessage(`
+					{
+						"datastoreEngine": "cockroachdb",
+						"pdb": {
+							"minAvailable": "3"
+						}
+					}
+				`),
+			},
+			wantPDB: applypolicyv1.PodDisruptionBudget("test-spicedb", "test").
+				WithLabels(metadata.LabelsForComponent("test", metadata.ComponentPDBLabel)).
+				WithLabels(map[string]string{
+					metadata.KubernetesInstanceLabelKey:  "test-spicedb",
+					metadata.KubernetesNameLabelKey:      "test-spicedb",
+					metadata.KubernetesComponentLabelKey: metadata.ComponentSpiceDBLabelValue,
+					metadata.KubernetesVersionLabelKey:   "v1",
+				}).
+				WithOwnerReferences(applymetav1.OwnerReference().
+					WithName("test").
+					WithKind(v1alpha1.SpiceDBClusterKind).
+					WithAPIVersion(v1alpha1.SchemeGroupVersion.String()).
+					WithUID("1")).
+				WithSpec(
+					applypolicyv1.PodDisruptionBudgetSpec().WithSelector(
+						applymetav1.LabelSelector().WithMatchLabels(map[string]string{
+							metadata.KubernetesInstanceLabelKey: "test-spicedb",
+						}),
+					).WithMinAvailable(intstr.FromInt32(3))),
+		},
+		{
+			name: "pdb with both maxUnavailable and minAvailable returns error",
+			cluster: v1alpha1.ClusterSpec{
+				SecretRef: "test-secret",
+				Config: json.RawMessage(`
+					{
+						"datastoreEngine": "cockroachdb",
+						"pdb": {
+							"maxUnavailable": "1",
+							"minAvailable": "1"
+						}
+					}
+				`),
+			},
+			wantErr: fmt.Errorf("only one of pdb.maxUnavailable or pdb.minAvailable can be set"),
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -3273,14 +3642,21 @@ metadata:
 				Spec: tt.cluster,
 			}
 			got, _, err := NewConfig(cluster, ptr.To(testGlobalConfig.Copy()), singleSecretMap("test-secret", secret), resources)
+			if tt.wantErr != nil {
+				require.ErrorContains(t, err, tt.wantErr.Error())
+				return
+			}
 			require.NoError(t, err)
 
-			wantPDB, err := json.Marshal(tt.wantPDB)
-			require.NoError(t, err)
-			gotPDB, err := json.Marshal(got.PodDisruptionBudget())
-			require.NoError(t, err)
+			require.Equal(t, tt.wantPDBDisabled, got.PDB.Disabled)
 
-			require.JSONEq(t, string(wantPDB), string(gotPDB))
+			if tt.wantPDB != nil {
+				wantPDB, err := json.Marshal(tt.wantPDB)
+				require.NoError(t, err)
+				gotPDB, err := json.Marshal(got.PodDisruptionBudget())
+				require.NoError(t, err)
+				require.JSONEq(t, string(wantPDB), string(gotPDB))
+			}
 		})
 	}
 }
@@ -3382,7 +3758,10 @@ func expectedDeployment(apply ...func(dep *applyappsv1.DeploymentApplyConfigurat
 			metadata.KubernetesVersionLabelKey:   "v1",
 		}).
 		WithAnnotations(map[string]string{
-			metadata.SpiceDBMigrationRequirementsKey: "1",
+			// every TestDeployment case below sets skipMigrations: true, so the
+			// deployment must advertise "skipped" rather than the real migration
+			// hash (otherwise check_migrations would treat it as already migrated).
+			metadata.SpiceDBMigrationRequirementsKey: "skipped",
 		}).
 		WithOwnerReferences(applymetav1.OwnerReference().
 			WithName("test").

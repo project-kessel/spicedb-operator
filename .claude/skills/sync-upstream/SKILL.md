@@ -170,6 +170,6 @@ Report:
 
 **Important: Before merging this PR, you must also:**
 1. Update the `deploy/deploy.yml` file to align with the new upstream bundle.
-   See [Updating the SpiceDB Operator Deployment File](https://project-kessel.github.io/docs-internal-overlay/for-red-hatters/running-kessel/spicedb/syncing-spicedb-repos/#updating-the-spicedb-operator-deployment-file).
+   See [Updating the SpiceDB Operator Deployment File](https://inscope.corp.redhat.com/docs/default/component/kessel-internal-docs/running-kessel/spicedb/syncing-spicedb-repos/#updating-the-spicedb-operator-deployment-file).
 2. Follow all post-sync steps at
-   https://project-kessel.github.io/docs-internal-overlay/for-red-hatters/running-kessel/spicedb/syncing-spicedb-repos/#after-syncing
+   https://inscope.corp.redhat.com/docs/default/component/kessel-internal-docs/running-kessel/spicedb/syncing-spicedb-repos/#after-syncing

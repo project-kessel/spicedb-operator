@@ -9,7 +9,6 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/jackc/pgx/v5"
 	"github.com/nightlyone/lockfile"
-
 	//revive:disable:dot-imports convention is dot-import
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
