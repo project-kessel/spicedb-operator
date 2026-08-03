@@ -26,7 +26,7 @@ The table below captures all changes to our fork from upstream. Each entry inclu
 | `.github/workflows/security-scanning.yml` | Added | Required ConsoleDot platform security workflow for CVE scanning | Red Hat only |
 | `.tekton/spicedb-operator-pull-request.yaml`, `.tekton/spicedb-operator-push.yaml` | Added | Konflux PR and merge build pipelines | Red Hat only |
 | `Dockerfile.openshift` | Added | FIPS-compliant builds using Hummingbird base images for Konflux | Red Hat only |
-| `build_deploy.sh` | Added | Legacy App Interface build script, still used for local image builds when testing operator updates | Red Hat only |
+| `build_deploy.sh` | Removed | Legacy App Interface build script replaced by the `docker-build-push` Makefile target | Delete |
 | `deploy/deploy.yml` | Added | Main deployment file for SpiceDB Operator on OpenShift clusters with CRDs, RBAC, and customizations for OpenShift (see deployment table below) | Red Hat only |
 | `config/operator_openshift.yaml` | Added | OpenShift-specific operator configuration | Red Hat only |
 | `scripts/redhat-diff.sh` | Added | Script to isolate Red Hat-specific changes from upstream sync PRs for easier code review | Red Hat only |
@@ -43,6 +43,19 @@ The table below captures all changes to our fork from upstream. Each entry inclu
 &nbsp;
 
 ### More on our Dockerfile and Builds
+
+**Building the Container Image**
+
+Log in to the required registries, then run the `docker-build-push` target with your image destination. `Dockerfile.openshift` pulls its base image from `registry.access.redhat.com`, so both logins are required.
+
+    podman login quay.io                     # or: docker login quay.io
+    podman login registry.access.redhat.com  # or: docker login registry.access.redhat.com
+
+    make docker-build-push IMAGE=quay.io/your-org/spicedb-operator
+
+If the build fails with an authentication error mentioning `registry.access.redhat.com`, ensure you are logged in using your Red Hat Customer Portal credentials. See the [Red Hat Registry Authentication guide](https://access.redhat.com/RegistryAuthentication) for details.
+
+`podman` is used automatically if available, otherwise `docker` is used. Override with `DOCKER=docker make docker-build-push IMAGE=quay.io/your-org/spicedb-operator`.
 
 **Hummingbird Base Images**
 
