@@ -6,5 +6,6 @@ release/
 e2e/cluster-state/**
 e2e/*.lck
 e2e/*.lck.*
+coverage.txt.*
 bin/
 .claude/settings.local.json

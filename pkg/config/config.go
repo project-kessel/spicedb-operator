@@ -9,7 +9,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/authzed/controller-idioms/hash"
 	jsonpatch "github.com/evanphx/json-patch"
 	"github.com/fatih/camelcase"
 	"github.com/gosimple/slug"
@@ -27,6 +26,8 @@ import (
 	applypolicyv1 "k8s.io/client-go/applyconfigurations/policy/v1"
 	applyrbacv1 "k8s.io/client-go/applyconfigurations/rbac/v1"
 	"k8s.io/kubectl/pkg/util/openapi"
+
+	"github.com/authzed/controller-idioms/hash"
 
 	"github.com/authzed/spicedb-operator/pkg/apis/authzed/v1alpha1"
 	"github.com/authzed/spicedb-operator/pkg/metadata"
@@ -93,6 +94,10 @@ var (
 	dashboardTLSKeyPathKey            = newKey("dashboardTLSKeyPath", DefaultTLSKeyFile)
 	dashboardTLSCertPathKey           = newKey("dashboardTLSCertPath", DefaultTLSCrtFile)
 	skipTLSWarningKey                 = newBoolOrStringKey("skipTLSWarning", false)
+	pdbKey                            = "pdb"
+	pdbDisabledSubKey                 = newBoolOrStringKey("disabled", false)
+	pdbMaxUnavailableSubKey           = newStringKey("maxUnavailable")
+	pdbMinAvailableSubKey             = newStringKey("minAvailable")
 )
 
 // Warning is an issue with configuration that we will report as undesirable
@@ -185,6 +190,14 @@ type SpiceConfig struct {
 	ProjectLabels                  bool
 	ProjectAnnotations             bool
 	Passthrough                    map[string]string
+	PDB                            PDBConfig
+}
+
+// PDBConfig holds the configuration for the PodDisruptionBudget.
+type PDBConfig struct {
+	Disabled       bool
+	MaxUnavailable *intstr.IntOrString
+	MinAvailable   *intstr.IntOrString
 }
 
 // NewConfig checks that the values in the config + the secrets are sane
@@ -201,6 +214,13 @@ func NewConfig(cluster *v1alpha1.SpiceDBCluster, globalConfig *OperatorConfig, s
 	passthroughConfig := make(map[string]string)
 	errs := make([]error, 0)
 	warnings := make([]error, 0)
+
+	for _, k := range []string{"version", "channel"} {
+		if _, ok := config[k]; ok {
+			warnings = append(warnings, fmt.Errorf(".spec.config.%s is ignored; use .spec.%s instead", k, k))
+			delete(config, k)
+		}
+	}
 
 	spiceConfig := SpiceConfig{
 		Name:                         cluster.Name,
@@ -303,7 +323,6 @@ func NewConfig(cluster *v1alpha1.SpiceDBCluster, globalConfig *OperatorConfig, s
 	}
 
 	if credentials != nil {
-		// Resolve DatastoreURI credential
 		if credentials.DatastoreURI == nil {
 			errs = append(errs, fmt.Errorf("credentials.datastoreURI must be set (use skip: true to opt out)"))
 		} else if credentials.DatastoreURI.Skip {
@@ -425,6 +444,39 @@ func NewConfig(cluster *v1alpha1.SpiceDBCluster, globalConfig *OperatorConfig, s
 	}
 	if len(saAnnotationWarnings) > 0 {
 		warnings = append(warnings, saAnnotationWarnings...)
+	}
+
+	if pdbRaw, ok := config[pdbKey]; ok {
+		delete(config, pdbKey)
+		pdbMap, ok := pdbRaw.(map[string]any)
+		if !ok {
+			errs = append(errs, fmt.Errorf("expected object for key %q", pdbKey))
+		} else {
+			pdbConfig := RawConfig(pdbMap)
+
+			spiceConfig.PDB.Disabled, err = pdbDisabledSubKey.pop(pdbConfig)
+			if err != nil {
+				errs = append(errs, err)
+			}
+
+			if s := pdbMaxUnavailableSubKey.pop(pdbConfig); s != "" {
+				val := parseIntOrStringValue(s)
+				spiceConfig.PDB.MaxUnavailable = &val
+			}
+
+			if s := pdbMinAvailableSubKey.pop(pdbConfig); s != "" {
+				val := parseIntOrStringValue(s)
+				spiceConfig.PDB.MinAvailable = &val
+			}
+
+			if spiceConfig.PDB.MaxUnavailable != nil && spiceConfig.PDB.MinAvailable != nil {
+				errs = append(errs, fmt.Errorf("only one of pdb.maxUnavailable or pdb.minAvailable can be set"))
+			}
+
+			for k := range pdbConfig {
+				warnings = append(warnings, fmt.Errorf("unknown key %q in pdb config", k))
+			}
+		}
 	}
 
 	// generate secret refs for tls if specified
@@ -950,10 +1002,20 @@ func (c *Config) Deployment(migrationHash, secretHash string) *applyappsv1.Deplo
 	}
 
 	// ensure patches don't overwrite anything critical for operator function
+	//
+	// When migrations are skipped the deployment must not claim the real
+	// migration hash: check_migrations treats a deployment carrying the target
+	// hash as proof migrations already ran, so stamping the real hash here
+	// (overriding unpatchedDeployment's "skipped") causes a later
+	// migrations-required reconcile to skip the migration job entirely.
+	migrationAnnotation := migrationHash
+	if c.SkipMigrations {
+		migrationAnnotation = "skipped"
+	}
 	d.WithName(name).WithNamespace(c.Namespace).WithOwnerReferences(c.ownerRef()).
 		WithLabels(metadata.LabelsForComponent(c.Name, metadata.ComponentSpiceDBLabelValue)).
 		WithAnnotations(map[string]string{
-			metadata.SpiceDBMigrationRequirementsKey: migrationHash,
+			metadata.SpiceDBMigrationRequirementsKey: migrationAnnotation,
 		})
 	d.Spec.Selector.WithMatchLabels(map[string]string{metadata.KubernetesInstanceLabelKey: name})
 	d.Spec.Template.
@@ -981,15 +1043,23 @@ func (c *Config) PodDisruptionBudget() *applypolicyv1.PodDisruptionBudgetApplyCo
 }
 
 func (c *Config) unpatchedPDB() *applypolicyv1.PodDisruptionBudgetApplyConfiguration {
+	spec := applypolicyv1.PodDisruptionBudgetSpec().
+		WithSelector(applymetav1.LabelSelector().WithMatchLabels(
+			map[string]string{metadata.KubernetesInstanceLabelKey: deploymentName(c.Name)},
+		))
+
+	switch {
+	case c.PDB.MaxUnavailable != nil:
+		spec = spec.WithMaxUnavailable(*c.PDB.MaxUnavailable)
+	case c.PDB.MinAvailable != nil:
+		spec = spec.WithMinAvailable(*c.PDB.MinAvailable)
+	default:
+		spec = spec.WithMaxUnavailable(intstr.FromInt32(1))
+	}
+
 	return applypolicyv1.PodDisruptionBudget(pdbName(c.Name), c.Namespace).
 		WithLabels(metadata.LabelsForComponent(c.Name, metadata.ComponentPDBLabel)).
-		WithSpec(applypolicyv1.PodDisruptionBudgetSpec().
-			WithSelector(applymetav1.LabelSelector().WithMatchLabels(
-				map[string]string{metadata.KubernetesInstanceLabelKey: deploymentName(c.Name)},
-			)).
-			// only allow one pod to be unavailable at a time
-			WithMaxUnavailable(intstr.FromInt32(1)),
-		)
+		WithSpec(spec)
 }
 
 func (c *Config) commonLabels(name string) map[string]string {
@@ -1106,4 +1176,13 @@ func deploymentName(name string) string {
 // pdbName returns the name of the unpatchedPDB given a SpiceDBCluster name
 func pdbName(name string) string {
 	return fmt.Sprintf("%s-spicedb", name)
+}
+
+// parseIntOrStringValue parses a string as an integer or, if that fails,
+// returns it as a string-typed IntOrString (e.g. for percentage values like "50%").
+func parseIntOrStringValue(s string) intstr.IntOrString {
+	if v, err := strconv.ParseInt(s, 10, 32); err == nil {
+		return intstr.FromInt32(int32(v))
+	}
+	return intstr.FromString(s)
 }

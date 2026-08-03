@@ -10,7 +10,6 @@ import (
 
 	"github.com/fluxcd/cli-utils/pkg/kstatus/polling"
 	"github.com/fluxcd/pkg/ssa"
-
 	//revive:disable:dot-imports convention is dot-import
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -53,7 +52,7 @@ func CreateFromManifests(ctx context.Context, namespace, engine string, restConf
 	decoder := yaml.NewYAMLToJSONDecoder(yamlReader)
 	objs := make([]*unstructured.Unstructured, 0)
 	for {
-		u := &unstructured.Unstructured{Object: map[string]interface{}{}}
+		u := &unstructured.Unstructured{Object: map[string]any{}}
 		err := decoder.Decode(&u.Object)
 		if errors.Is(err, io.EOF) {
 			break

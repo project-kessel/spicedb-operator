@@ -8,15 +8,13 @@ import (
 	"time"
 
 	database "cloud.google.com/go/spanner/admin/database/apiv1"
+	adminpb "cloud.google.com/go/spanner/admin/database/apiv1/databasepb"
 	instances "cloud.google.com/go/spanner/admin/instance/apiv1"
+	instance "cloud.google.com/go/spanner/admin/instance/apiv1/instancepb"
 	"github.com/go-logr/logr"
 	"github.com/nightlyone/lockfile"
-
-	//revive:disable:dot-imports convention is dot-import
 	. "github.com/onsi/gomega"
 	"google.golang.org/api/option"
-	adminpb "google.golang.org/genproto/googleapis/spanner/admin/database/v1"
-	"google.golang.org/genproto/googleapis/spanner/admin/instance/v1"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -80,10 +78,10 @@ func (p *SpannerProvider) Cleanup(_ context.Context, _ *LogicalDatabase) {
 func (p *SpannerProvider) execInstance(ctx context.Context, g Gomega, cmd func(client *instances.InstanceAdminClient)) {
 	ctx, cancel := context.WithTimeout(ctx, 500*time.Second)
 	defer cancel()
-	ports := e2eutil.PortForward(Default, p.namespace, "spanner-0", []string{":9010"}, ctx.Done())
+	ports := e2eutil.PortForward(g, p.namespace, "spanner-0", []string{":9010"}, ctx.Done())
 	g.Expect(len(ports)).To(Equal(1))
 
-	Expect(os.Setenv("SPANNER_EMULATOR_HOST", fmt.Sprintf("localhost:%d", ports[0].Local))).To(Succeed())
+	g.Expect(os.Setenv("SPANNER_EMULATOR_HOST", fmt.Sprintf("localhost:%d", ports[0].Local))).To(Succeed())
 
 	var instancesClient *instances.InstanceAdminClient
 	g.Eventually(func() error {
@@ -94,7 +92,7 @@ func (p *SpannerProvider) execInstance(ctx context.Context, g Gomega, cmd func(c
 			option.WithEndpoint(fmt.Sprintf("localhost:%d", ports[0].Local)))
 		return err
 	}).Should(Succeed())
-	defer func() { Expect(instancesClient.Close()).To(Succeed()) }()
+	defer func() { g.Expect(instancesClient.Close()).To(Succeed()) }()
 
 	cmd(instancesClient)
 }
@@ -102,16 +100,16 @@ func (p *SpannerProvider) execInstance(ctx context.Context, g Gomega, cmd func(c
 func (p *SpannerProvider) execDatabase(ctx context.Context, g Gomega, cmd func(client *database.DatabaseAdminClient)) {
 	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
-	ports := e2eutil.PortForward(Default, p.namespace, "spanner-0", []string{":9010"}, ctx.Done())
+	ports := e2eutil.PortForward(g, p.namespace, "spanner-0", []string{":9010"}, ctx.Done())
 	g.Expect(len(ports)).To(Equal(1))
 
 	adminClient, err := database.NewDatabaseAdminClient(ctx,
 		option.WithGRPCDialOption(grpc.WithTransportCredentials(insecure.NewCredentials())),
 		option.WithoutAuthentication(),
 		option.WithEndpoint(fmt.Sprintf("localhost:%d", ports[0].Local)))
-	Expect(err).To(Succeed())
+	g.Expect(err).To(Succeed())
 	defer func() {
-		Expect(adminClient.Close()).To(Succeed())
+		g.Expect(adminClient.Close()).To(Succeed())
 	}()
 
 	cmd(adminClient)
@@ -123,7 +121,7 @@ func (p *SpannerProvider) ensureDatabase(ctx context.Context) {
 	logger := logr.FromContextOrDiscard(ctx)
 
 	for {
-		if p.running(ctx) == nil {
+		if p.running(ctx, Default) == nil {
 			logger.V(4).Info("spanner found running")
 			return
 		}
@@ -157,13 +155,13 @@ func (p *SpannerProvider) ensureDatabase(ctx context.Context) {
 			})
 		}).Should(Succeed())
 		Eventually(func(g Gomega) {
-			g.Expect(p.running(ctx)).To(Succeed())
-		})
+			g.Expect(p.running(ctx, g)).To(Succeed())
+		}).Should(Succeed())
 		return
 	}
 }
 
-func (p *SpannerProvider) running(ctx context.Context) error {
+func (p *SpannerProvider) running(ctx context.Context, g Gomega) error {
 	if _, err := p.kclient.CoreV1().Namespaces().Get(ctx, p.namespace, metav1.GetOptions{}); err != nil {
 		return err
 	}
@@ -173,12 +171,10 @@ func (p *SpannerProvider) running(ctx context.Context) error {
 	}
 
 	var err error
-	p.execInstance(ctx, Default, func(client *instances.InstanceAdminClient) {
-		var i *instance.Instance
-		i, err = client.GetInstance(ctx, &instance.GetInstanceRequest{
+	p.execInstance(ctx, g, func(client *instances.InstanceAdminClient) {
+		_, err = client.GetInstance(ctx, &instance.GetInstanceRequest{
 			Name: "projects/fake-project-id/instances/fake-instance",
 		})
-		fmt.Println(i)
 	})
 	return err
 }

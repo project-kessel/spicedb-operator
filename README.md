@@ -3,6 +3,7 @@
 [![Container Image](https://img.shields.io/github/v/release/authzed/spicedb-operator?color=%232496ED&label=container&logo=docker "Container Image")](https://hub.docker.com/r/authzed/spicedb-operator/tags)
 [![Docs](https://img.shields.io/badge/docs-authzed.com-%234B4B6C "Authzed Documentation")](https://docs.authzed.com)
 [![Build Status](https://github.com/authzed/spicedb-operator/workflows/Build%20&%20Test/badge.svg "GitHub Actions")](https://github.com/authzed/spicedb-operator/actions)
+[![Coverage](https://img.shields.io/codecov/c/github/authzed/spicedb-operator "Coverage")](https://app.codecov.io/gh/authzed/spicedb-operator)
 [![Discord Server](https://img.shields.io/discord/844600078504951838?color=7289da&logo=discord "Discord Server")](https://discord.gg/jTysUaxXzM)
 [![Twitter](https://img.shields.io/twitter/follow/authzed?color=%23179CF0&logo=twitter&style=flat-square "@authzed on Twitter")](https://twitter.com/authzed)
 
@@ -84,17 +85,54 @@ zed --insecure --endpoint=localhost:50051 --token=averysecretpresharedkey schema
 - Learn how to use SpiceDB via the [docs](https://docs.authzed.com/) and [playground](https://play.authzed.com/).
 - Ask questions and join the community in [discord](https://authzed.com/discord).
 
-## Building the Container Image
+## Configuration
 
-Log in to quay.io first, then run the `docker-build-push` target with your image destination. The standard `Dockerfile` uses only public base images and requires no additional registry login.
+### Datastore TLS Certificates
 
-    podman login quay.io   # or: docker login quay.io
+If your datastore requires TLS client certificates for authentication, you can configure SpiceDB to use them via the `datastoreTLSSecretName` configuration option.
 
-    make docker-build-push IMAGE=quay.io/your-org/spicedb-operator
+When configured, the operator will mount the specified secret's contents at `/spicedb-db-tls` (read-only) in both the SpiceDB pods and migration jobs. You can then reference these certificate files in your `datastore_uri` connection string.
 
-> **Note:** If building with `Dockerfile.openshift` for FIPS-compliant Red Hat builds, also log in to `registry.access.redhat.com` using your Red Hat Customer Portal credentials before building. See the [Red Hat Registry Authentication guide](https://access.redhat.com/RegistryAuthentication) for details.
+#### Example: PostgreSQL/CockroachDB with TLS
 
-`podman` is used automatically if available, otherwise `docker` is used. Override with `DOCKER=docker make docker-build-push IMAGE=quay.io/your-org/spicedb-operator`.
+1. Create a Kubernetes secret containing your TLS certificates:
+
+```console
+kubectl create secret generic my-db-tls \
+  --from-file=ca.crt=/path/to/ca.crt \
+  --from-file=tls.crt=/path/to/client.crt \
+  --from-file=tls.key=/path/to/client.key
+```
+
+1. Configure your SpiceDBCluster to use the secret:
+
+```yaml
+apiVersion: authzed.com/v1alpha1
+kind: SpiceDBCluster
+metadata:
+  name: production
+spec:
+  config:
+    datastoreEngine: cockroachdb
+    datastoreTLSSecretName: my-db-tls
+  secretName: production-spicedb-config
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: production-spicedb-config
+stringData:
+  datastore_uri: "postgresql://user@db.example.com:26257/spicedb?sslmode=verify-full&sslrootcert=/spicedb-db-tls/ca.crt&sslcert=/spicedb-db-tls/tls.crt&sslkey=/spicedb-db-tls/tls.key"
+  preshared_key: "your-secret-key"
+```
+
+The certificates will be available at these paths inside the SpiceDB containers:
+
+- `/spicedb-db-tls/ca.crt` - CA certificate
+- `/spicedb-db-tls/tls.crt` - Client certificate
+- `/spicedb-db-tls/tls.key` - Client private key
+
+Note: The exact SSL parameter names depend on your datastore's connection driver. Consult your datastore's documentation for the correct connection string format.
 
 ## Automatic and Suggested Updates
 
