@@ -84,6 +84,18 @@ zed --insecure --endpoint=localhost:50051 --token=averysecretpresharedkey schema
 - Learn how to use SpiceDB via the [docs](https://docs.authzed.com/) and [playground](https://play.authzed.com/).
 - Ask questions and join the community in [discord](https://authzed.com/discord).
 
+## Building the Container Image
+
+Log in to quay.io first, then run the `docker-build-push` target with your image destination. The standard `Dockerfile` uses only public base images and requires no additional registry login.
+
+    podman login quay.io   # or: docker login quay.io
+
+    make docker-build-push IMAGE=quay.io/your-org/spicedb-operator
+
+> **Note:** If building with `Dockerfile.openshift` for FIPS-compliant Red Hat builds, also log in to `registry.access.redhat.com` using your Red Hat Customer Portal credentials before building. See the [Red Hat Registry Authentication guide](https://access.redhat.com/RegistryAuthentication) for details.
+
+`podman` is used automatically if available, otherwise `docker` is used. Override with `DOCKER=docker make docker-build-push IMAGE=quay.io/your-org/spicedb-operator`.
+
 ## Automatic and Suggested Updates
 
 The SpiceDB operator now ships with a set of release channels for SpiceDB.
