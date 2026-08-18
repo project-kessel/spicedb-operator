@@ -25,7 +25,7 @@ The table below captures all changes to our fork from upstream. Each entry inclu
 | `.github/workflows/release.yaml` | Removed | Not applicable to our fork | Delete |
 | `.github/workflows/security-scanning.yml` | Added | Required ConsoleDot platform security workflow for CVE scanning | Red Hat only |
 | `.tekton/spicedb-operator-pull-request.yaml`, `.tekton/spicedb-operator-push.yaml` | Added | Konflux PR and merge build pipelines | Red Hat only |
-| `Dockerfile.openshift` | Added | FIPS-compliant builds using Hummingbird base images for Konflux | Red Hat only |
+| `Dockerfile.openshift` | Added | FIPS-compliant builds using Hummingbird base images for Konflux; reads version from `SYNC.md` and embeds it via `-ldflags` so `spicedb-operator version` reports the correct release tag | Red Hat only |
 | `build_deploy.sh` | Removed | Legacy App Interface build script replaced by the `docker-build-push` Makefile target | Delete |
 | `deploy/deploy.yml` | Added | Main deployment file for SpiceDB Operator on OpenShift clusters with CRDs, RBAC, and customizations for OpenShift (see deployment table below) | Red Hat only |
 | `config/operator_openshift.yaml` | Added | OpenShift-specific operator configuration | Red Hat only |
