@@ -9,8 +9,9 @@ RUN go mod download
 COPY . .
 
 RUN --mount=type=cache,target=/root/.cache/go-build --mount=type=cache,target=/go/pkg/mod \
+    tag=$(grep '^TAG:' SYNC.md) && VERSION=${tag#*: } && \
     go mod tidy && \
-    go build -o /usr/local/bin/spicedb-operator ./cmd/...
+    go build -ldflags="-X 'github.com/authzed/spicedb-operator/pkg/version.Version=${VERSION}'" -o /usr/local/bin/spicedb-operator ./cmd/...
 
 # Runtime stage -- set GODEBUG so the binary runs in FIPS mode.
 FROM registry.access.redhat.com/hi/core-runtime:2.42-openssl-fips
