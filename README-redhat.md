@@ -24,7 +24,8 @@ The table below captures all changes to our fork from upstream. Each entry inclu
 | `.github/workflows/cla.yaml` | Removed | Not applicable to our fork | Delete |
 | `.github/workflows/release.yaml` | Removed | Not applicable to our fork | Delete |
 | `.github/workflows/security-scanning.yml` | Added | Required ConsoleDot platform security workflow for CVE scanning | Red Hat only |
-| `.tekton/spicedb-operator-pull-request.yaml`, `.tekton/spicedb-operator-push.yaml` | Added | Konflux PR and merge build pipelines | Red Hat only |
+| `.github/workflows/tag-release.yaml` | Added | Automatically creates a git tag on the merge commit whenever `SYNC.md` changes on `main`; required for accurate CVE scanning (Go VCS stamping reads the nearest ancestor tag to set `debug.BuildInfo.Main.Version`) | Red Hat only |
+| `.tekton/spicedb-operator-pull-request.yaml`, `.tekton/spicedb-operator-push.yaml` | Added; `fetchTags: "true"` and `depth: "0"` added to `clone-repository` task params | Konflux PR and merge build pipelines; `fetchTags` + `depth: "0"` (full clone) ensure Go's VCS stamping can walk history back to the nearest semver tag and embed it as `debug.BuildInfo.Main.Version` — without this CVE scanners see a `v0.0.0` pseudo-version and generate false positives. Konflux automated updates may remove these params — re-add them if missing. | Red Hat only |
 | `Dockerfile.openshift` | Added | FIPS-compliant builds using Hummingbird base images for Konflux; reads version from `SYNC.md` and embeds it via `-ldflags` so `spicedb-operator version` reports the correct release tag | Red Hat only |
 | `build_deploy.sh` | Removed | Legacy App Interface build script replaced by the `docker-build-push` Makefile target | Delete |
 | `deploy/deploy.yml` | Added | Main deployment file for SpiceDB Operator on OpenShift clusters with CRDs, RBAC, and customizations for OpenShift (see deployment table below) | Red Hat only |
