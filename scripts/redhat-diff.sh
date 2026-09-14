@@ -84,6 +84,17 @@ read_tag_from_ref() {
         | tr -d '[:space:]'
 }
 
+# Read the upstream commit SHA from SYNC.md at a given git ref.
+# Using the SHA instead of the tag name avoids ambiguity when our
+# tag-release.yaml workflow creates a local fork tag (e.g. v1.26.0) that
+# points to our merge commit rather than the upstream authzed commit.
+read_sha_from_ref() {
+    local ref="$1"
+    git -C "$REPO_ROOT" show "$ref:SYNC.md" 2>/dev/null \
+        | sed -n 's/^COMMIT_SHA:[[:space:]]*//p' \
+        | tr -d '[:space:]'
+}
+
 if [[ -z "$TAG" ]]; then
     TAG=$(read_tag_from_ref "$BRANCH")
     if [[ -z "$TAG" ]]; then
@@ -109,15 +120,24 @@ if [[ "$SHOW_ALL" == true ]]; then
     exit 0
 fi
 
-# Read old tag from SYNC.md on the base branch
+# Read old tag and its upstream commit SHA from SYNC.md on the base branch.
+# We use the SHA (not tags/$OLD_TAG) because our tag-release.yaml workflow
+# creates a local fork tag on the merge commit, which already includes Red Hat
+# files — causing the base comparison to see no delta for those files.
 OLD_TAG=$(read_tag_from_ref "$BASE")
 if [[ -z "$OLD_TAG" ]]; then
     echo "Error: could not parse TAG from SYNC.md on $BASE" >&2
     exit 1
 fi
 
-if ! git -C "$REPO_ROOT" rev-parse "tags/$OLD_TAG" >/dev/null 2>&1; then
-    echo "Error: old tag '$OLD_TAG' not found. Run 'git fetch upstream --tags' first." >&2
+OLD_SHA=$(read_sha_from_ref "$BASE")
+if [[ -z "$OLD_SHA" ]]; then
+    echo "Error: could not parse COMMIT_SHA from SYNC.md on $BASE" >&2
+    exit 1
+fi
+
+if ! git -C "$REPO_ROOT" rev-parse "$OLD_SHA" >/dev/null 2>&1; then
+    echo "Error: upstream commit '$OLD_SHA' for $OLD_TAG not found. Run 'git fetch upstream --tags' first." >&2
     exit 1
 fi
 
@@ -127,7 +147,7 @@ echo "Comparing Red Hat delta: $BASE ($OLD_TAG) -> $BRANCH ($TAG)" >&2
 ALL_RH_FILES=$(
     {
         git -C "$REPO_ROOT" diff --name-only "tags/$TAG..$BRANCH"
-        git -C "$REPO_ROOT" diff --name-only "tags/$OLD_TAG..$BASE"
+        git -C "$REPO_ROOT" diff --name-only "$OLD_SHA..$BASE"
     } | sort -u
 )
 
@@ -159,12 +179,12 @@ while IFS= read -r file; do
     # Detect stale files: file exists on merge branch but was removed/renamed
     # upstream (not in new tag) and was an upstream file (existed in old tag).
     # These are not Red Hat changes — they should have been removed by the merge.
-    if ! file_exists_at_ref "tags/$TAG" "$file" && file_exists_at_ref "tags/$OLD_TAG" "$file"; then
+    if ! file_exists_at_ref "tags/$TAG" "$file" && file_exists_at_ref "$OLD_SHA" "$file"; then
         STALE_FILES+=("$file")
         continue
     fi
 
-    old_delta=$(git -C "$REPO_ROOT" diff "tags/$OLD_TAG..$BASE" -- "$file" | diff_essence)
+    old_delta=$(git -C "$REPO_ROOT" diff "$OLD_SHA..$BASE" -- "$file" | diff_essence)
     new_delta=$(git -C "$REPO_ROOT" diff "tags/$TAG..$BRANCH" -- "$file" | diff_essence)
 
     if [[ "$old_delta" != "$new_delta" ]]; then
