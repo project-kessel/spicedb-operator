@@ -12,6 +12,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	applyappsv1 "k8s.io/client-go/applyconfigurations/apps/v1"
+	"k8s.io/utils/ptr"
 
 	"github.com/authzed/controller-idioms/handler"
 	"github.com/authzed/controller-idioms/queue/fake"
@@ -24,6 +25,7 @@ import (
 func TestEnsureDeploymentHandler(t *testing.T) {
 	now := metav1.Now()
 	var nextKey handler.Key = "next"
+	applyErr := fmt.Errorf("apply error")
 	tests := []struct {
 		name string
 
@@ -34,20 +36,56 @@ func TestEnsureDeploymentHandler(t *testing.T) {
 		pods                []*corev1.Pod
 		currentStatus       *v1alpha1.SpiceDBCluster
 		replicas            int32
+		applyErr            error
 
-		expectNext         handler.Key
-		expectStatus       *v1alpha1.SpiceDBCluster
-		expectRequeueErr   error
-		expectRequeueAfter bool
-		expectApply        bool
-		expectDelete       bool
-		expectPatchStatus  bool
+		expectNext          handler.Key
+		expectStatus        *v1alpha1.SpiceDBCluster
+		expectRequeueErr    error
+		expectRequeueAPIErr error
+		expectRequeueAfter  bool
+		expectApply         bool
+		expectDelete        bool
+		expectPatchStatus   bool
 	}{
 		{
 			name:               "creates if no deployments",
 			migrationHash:      "testtesttesttest",
 			secretHash:         "secret",
 			expectApply:        true,
+			expectRequeueAfter: true,
+		},
+		{
+			name:              "reports apply failure on status",
+			migrationHash:     "testtesttesttest",
+			secretHash:        "secret",
+			applyErr:          applyErr,
+			expectApply:       true,
+			expectPatchStatus: true,
+			expectStatus: &v1alpha1.SpiceDBCluster{Status: v1alpha1.ClusterStatus{Conditions: []metav1.Condition{{
+				Type:               v1alpha1.ConditionTypeRolloutError,
+				Status:             metav1.ConditionTrue,
+				LastTransitionTime: now,
+				Reason:             v1alpha1.ConditionReasonApplyFailed,
+				Message:            "Error applying deployment: apply error",
+			}}}},
+			expectRequeueAPIErr: applyErr,
+		},
+		{
+			name: "clears apply failure once apply succeeds",
+			currentStatus: &v1alpha1.SpiceDBCluster{Status: v1alpha1.ClusterStatus{Conditions: []metav1.Condition{{
+				Type:               v1alpha1.ConditionTypeRolloutError,
+				Status:             metav1.ConditionTrue,
+				LastTransitionTime: now,
+				Reason:             v1alpha1.ConditionReasonApplyFailed,
+				Message:            "Error applying deployment: apply error",
+			}}}},
+			migrationHash:     "testtesttesttest",
+			secretHash:        "secret",
+			expectApply:       true,
+			expectPatchStatus: true,
+			expectStatus: &v1alpha1.SpiceDBCluster{Status: v1alpha1.ClusterStatus{
+				Conditions: []metav1.Condition{},
+			}},
 			expectRequeueAfter: true,
 		},
 		{
@@ -376,6 +414,43 @@ func TestEnsureDeploymentHandler(t *testing.T) {
 				Conditions: []metav1.Condition{},
 			}},
 		},
+		{
+			// config.replicas is 2, but an autoscaler has scaled the Deployment
+			// to 6 after spec.replicas was patched out of the operator's apply.
+			// The rollout is judged against the live spec.replicas, so a fully
+			// available Deployment at 6 clears the condition instead of waiting
+			// forever for it to reach config.replicas.
+			name: "removes rollout status when replicas are externally managed",
+			currentStatus: &v1alpha1.SpiceDBCluster{Status: v1alpha1.ClusterStatus{
+				Conditions: []metav1.Condition{{
+					Type:               v1alpha1.ConditionTypeRolling,
+					Status:             metav1.ConditionTrue,
+					LastTransitionTime: now,
+					Reason:             "WaitingForDeploymentAvailability",
+					Message:            "Waiting for deployment to be available: 6/2 available, 6/2 ready, 6/2 updated, 0/0 generation.",
+				}},
+			}},
+			existingDeployments: []*appsv1.Deployment{{
+				ObjectMeta: metav1.ObjectMeta{Annotations: map[string]string{
+					metadata.SpiceDBConfigKey: "7ddaf0d5f794806f",
+				}},
+				Spec: appsv1.DeploymentSpec{Replicas: ptr.To[int32](6)},
+				Status: appsv1.DeploymentStatus{
+					Replicas:          6,
+					UpdatedReplicas:   6,
+					AvailableReplicas: 6,
+					ReadyReplicas:     6,
+				},
+			}},
+			replicas:          2,
+			migrationHash:     "testtesttesttest",
+			secretHash:        "secret",
+			expectPatchStatus: true,
+			expectNext:        nextKey,
+			expectStatus: &v1alpha1.SpiceDBCluster{Status: v1alpha1.ClusterStatus{
+				Conditions: []metav1.Condition{},
+			}},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -407,7 +482,7 @@ func TestEnsureDeploymentHandler(t *testing.T) {
 			h := &DeploymentHandler{
 				applyDeployment: func(_ context.Context, _ *applyappsv1.DeploymentApplyConfiguration) (*appsv1.Deployment, error) {
 					applyCalled = true
-					return nil, nil
+					return nil, tt.applyErr
 				},
 				deleteDeployment: func(_ context.Context, _ types.NamespacedName) error {
 					deleteCalled = true
@@ -439,7 +514,63 @@ func TestEnsureDeploymentHandler(t *testing.T) {
 				require.Equal(t, 1, ctrls.RequeueErrCallCount())
 				require.Equal(t, tt.expectRequeueErr, ctrls.RequeueErrArgsForCall(0))
 			}
+			if tt.expectRequeueAPIErr != nil {
+				require.Equal(t, 1, ctrls.RequeueAPIErrCallCount())
+				require.Equal(t, tt.expectRequeueAPIErr, ctrls.RequeueAPIErrArgsForCall(0))
+			}
 			require.Equal(t, tt.expectRequeueAfter, ctrls.RequeueAfterCallCount() == 1)
+		})
+	}
+}
+
+func TestDesiredDeploymentReplicas(t *testing.T) {
+	tests := []struct {
+		name       string
+		specValue  *int32
+		configured int32
+		expected   int32
+	}{
+		{name: "uses live spec.replicas when set", specValue: ptr.To[int32](6), configured: 2, expected: 6},
+		{name: "falls back to configured when spec.replicas is unset", specValue: nil, configured: 2, expected: 2},
+		{name: "uses live spec.replicas even when zero", specValue: ptr.To[int32](0), configured: 2, expected: 0},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			dep := &appsv1.Deployment{Spec: appsv1.DeploymentSpec{Replicas: tt.specValue}}
+			require.Equal(t, tt.expected, desiredDeploymentReplicas(dep, tt.configured))
+		})
+	}
+}
+
+func TestDeploymentRolloutComplete(t *testing.T) {
+	deployment := func(generation, observed int64, replicas, updated, available int32) *appsv1.Deployment {
+		return &appsv1.Deployment{
+			ObjectMeta: metav1.ObjectMeta{Generation: generation},
+			Status: appsv1.DeploymentStatus{
+				ObservedGeneration: observed,
+				Replicas:           replicas,
+				UpdatedReplicas:    updated,
+				AvailableReplicas:  available,
+			},
+		}
+	}
+	tests := []struct {
+		name     string
+		dep      *appsv1.Deployment
+		desired  int32
+		expected bool
+	}{
+		{name: "complete when all replicas updated and available", dep: deployment(1, 1, 3, 3, 3), desired: 3, expected: true},
+		{name: "incomplete while spec generation not yet observed", dep: deployment(2, 1, 3, 3, 3), desired: 3, expected: false},
+		{name: "incomplete while replicas are still updating", dep: deployment(1, 1, 3, 2, 2), desired: 3, expected: false},
+		{name: "incomplete while old replicas remain", dep: deployment(1, 1, 4, 3, 3), desired: 3, expected: false},
+		{name: "incomplete while updated replicas are not yet available", dep: deployment(1, 1, 3, 3, 2), desired: 3, expected: false},
+		{name: "complete against an externally scaled count above config", dep: deployment(1, 1, 6, 6, 6), desired: 6, expected: true},
+		{name: "complete when scaled to zero", dep: deployment(1, 1, 0, 0, 0), desired: 0, expected: true},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			require.Equal(t, tt.expected, deploymentRolloutComplete(tt.dep, tt.desired))
 		})
 	}
 }
