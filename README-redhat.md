@@ -84,6 +84,7 @@ The below table captures changes in `deploy/deploy.yml` that diverge from the up
 | CPU and Memory adjustments | Requests/limits have been increased for our deployment needs |
 | `runAsUser` and `runAsGroup` removed from container and pod `securityContexts` | These violate OpenShift security policies and prevent the image from running due to using the `nobody` user |
 | The `config` volume/volume mount removed | This volume facilitates the `update-graph` ConfigMap which was also removed |
+| Added the `PROFILING_ENABLED` template parameter, defaulting to `false` | Keeps pprof and runtime debug flag endpoints disabled when not in use; preserve this parameter during upstream syncs |
 
 
 &nbsp;

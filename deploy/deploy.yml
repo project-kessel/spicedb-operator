@@ -555,6 +555,7 @@ objects:
           - run
           - -v=4
           - --crd=false
+          - --profiling=${PROFILING_ENABLED}
           - --config
           - /opt/operator/update-graph.yaml
           image: ${IMAGE}:${IMAGE_TAG}
@@ -608,3 +609,6 @@ parameters:
   - name: IMAGE_TAG
     required: true
     value: latest
+  - name: PROFILING_ENABLED
+    description: Enable pprof and runtime debug flag endpoints; disable when not in use
+    value: "false"
