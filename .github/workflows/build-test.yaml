@@ -12,6 +12,9 @@ on:  # yamllint disable-line rule:truthy
       - "*"
 env:
   GO_VERSION: "~1.25"
+permissions:
+  contents: read
+
 jobs:
   paths-filter:
     runs-on: "ubuntu-latest"

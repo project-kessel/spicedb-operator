@@ -12,6 +12,9 @@ on:  # yamllint disable-line rule:truthy
       - "checks_requested"
 env:
   GO_VERSION: "~1.25"
+permissions:
+  contents: read
+
 jobs:
   go-lint:
     name: "Lint Go"
