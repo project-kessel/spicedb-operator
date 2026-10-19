@@ -2,12 +2,6 @@
 
 This document captures all changes made by Red Hat that diverge from the upstream fork. It outlines why these changes were made for historical reference and to help ensure they are kept when syncing with upstream.
 
-### OpenSSF Scorecard
-
-GitHub's Scorecard action does not support fork repositories. The [upstream authzed/spicedb-operator Scorecard](https://securityscorecards.dev/viewer/?uri=github.com/authzed/spicedb-operator) is authoritative for upstream code; Red Hat-specific changes in this fork are covered by the repository's existing security scans and review controls.
-
-&nbsp;
-
 ### Drift Tracking
 
 The table below captures all changes to our fork from upstream. Each entry includes the affected files, what changed, why, and how to handle conflicts during upstream syncs.
@@ -23,6 +17,7 @@ The table below captures all changes to our fork from upstream. Each entry inclu
 | `.github/dependabot.yml` | Removed | Aligns with Red Hat mandates to leverage Konflux | Delete |
 | `.github/renovate.json` | Replaced with our own config | Configures Mintmaker (part of Konflux) to prevent Go pkg update PRs and move to weekly updates for Dockerfile base image updates | Keep ours |
 | Active workflows in `.github/workflows/` | Runner changed to `ubuntu-latest` | Authzed uses custom self-hosted runners (`depot-*`, `buildjet-*`) which we don't have access to | Re-apply |
+| Active workflows in `.github/workflows/` | Added top-level `permissions: contents: read` | Security hardening: restricts workflow permissions to read-only by default (principle of least privilege) | Re-apply |
 | `.github/workflows/build-test.yaml` | Build Container Image job uses `Dockerfile.openshift` instead of `Dockerfile`; disabled E2E tests (`if: false`) | Ensures image build test uses our custom Dockerfile; E2E tests not critical for our builds | Re-apply |
 | `.github/workflows/lint.yaml` | Disabled YAML & Markdown linting (`if: false`) | Not critical to Red Hat builds | Re-apply |
 | `.github/workflows/cla.yaml` | Removed | Not applicable to our fork | Delete |
