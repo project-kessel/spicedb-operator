@@ -39,7 +39,7 @@ The table below captures all changes to our fork from upstream. Each entry inclu
 | `README-redhat.md` | Added | Documents all Red Hat fork changes and rationale | Red Hat only |
 | `SYNC.md` | Added | Tracks the current upstream version synced to this fork | Red Hat only |
 | `.yamllint` | Added | YAML linting configuration | Red Hat only |
-| `pkg/config/patch.go` (plus `patch_rbac_test.go`, `psa_test.go`) | Rejects `.spec.patches` that modify a generated `Role`'s `rules` or a `RoleBinding`'s `roleRef`; adds tests for the rejection paths and Namespace PSA labels | Security hardening (FIND-002/FIND-005): patches are matched by kind only, so a cluster author could otherwise escalate the SpiceDB ServiceAccount's RBAC privileges | Re-apply |
+| `pkg/config/psa_test.go` | Added | Asserts the operator Namespace manifests carry PSA `restricted` labels | Red Hat only |
 | `config/operator.yaml` | Added `pod-security.kubernetes.io/{enforce,warn,audit}: restricted` and `*-version: latest` labels to the operator Namespace | Enforce Pod Security Admission `restricted` on the operator namespace (FIND-005) | Re-apply |
 | `config/operator_openshift.yaml`, `deploy/deploy.yml` | Added `pod-security.kubernetes.io/{enforce,warn,audit}: restricted` and `*-version: latest` labels to the operator Namespace | Enforce Pod Security Admission `restricted` on the operator namespace (FIND-005) | Red Hat only |
 
