@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	jsonpatch "github.com/evanphx/json-patch"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -16,6 +17,60 @@ import (
 )
 
 const wildcard = "*"
+
+// protectedRBACFields maps generated RBAC kinds to the top-level field whose
+// modification by a user-supplied patch would let that patch escalate the
+// permissions the operator grants to SpiceDB.
+var protectedRBACFields = map[string]string{
+	"Role":        "rules",
+	"RoleBinding": "roleRef",
+}
+
+// validateRBACPatch rejects patches that modify the security-sensitive field
+// of a generated Role or RoleBinding. ApplyPatches matches patches by kind
+// only, so without this check a SpiceDBCluster author could rewrite the
+// operator-managed rules or roleRef and escalate the ServiceAccount's
+// privileges beyond what the operator grants.
+func validateRBACPatch(kind string, patch json.RawMessage) error {
+	field, protected := protectedRBACFields[kind]
+	if !protected {
+		return nil
+	}
+
+	// Determine whether the patch is a JSON6902 operation or a strategic
+	// merge patch, mirroring the detection in ApplyPatches.
+	decoder := utilyaml.NewYAMLOrJSONDecoder(bytes.NewReader(patch), 100)
+	var op jsonpatch.Operation
+	if err := decoder.Decode(&op); err == nil && op.Kind() != "unknown" {
+		// test operations do not modify the object.
+		if op.Kind() == "test" {
+			return nil
+		}
+		path, err := op.Path()
+		if err != nil {
+			return nil
+		}
+		if path == "" || path == "/" || path == "/"+field || strings.HasPrefix(path, "/"+field+"/") {
+			return fmt.Errorf("patch may not modify %q on a %s", field, kind)
+		}
+		return nil
+	}
+
+	// Strategic merge patch: the protected fields are both top-level, so only
+	// the top-level keys matter here.
+	jsonPatch, err := utilyaml.ToJSON(patch)
+	if err != nil {
+		return nil
+	}
+	var fields map[string]json.RawMessage
+	if err := json.Unmarshal(jsonPatch, &fields); err != nil {
+		return nil
+	}
+	if _, ok := fields[field]; ok {
+		return fmt.Errorf("patch may not modify %q on a %s", field, kind)
+	}
+	return nil
+}
 
 // ApplyPatches applies a set of patches to an object.
 // It returns the number of patches applied, a bool indicating whether there
@@ -57,6 +112,11 @@ func ApplyPatches[K any](object, out K, patches []v1alpha1.Patch, resolver Patch
 	errs := make([]error, 0)
 	for i, p := range patches {
 		if p.Kind == *typeMeta.Kind || p.Kind == wildcard {
+			if err := validateRBACPatch(*typeMeta.Kind, p.Patch); err != nil {
+				errs = append(errs, fmt.Errorf("patch %d rejected: %w", i, err))
+				continue
+			}
+
 			// determine if the patch is a strategic merge or a json6902 patch
 			decoder := utilyaml.NewYAMLOrJSONDecoder(bytes.NewReader(p.Patch), 100)
 			var json6902op jsonpatch.Operation
