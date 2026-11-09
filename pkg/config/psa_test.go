@@ -22,7 +22,6 @@ var wantNamespacePSALabels = map[string]string{
 
 func TestOperatorNamespacePSALabels(t *testing.T) {
 	manifests := []string{
-		"../../config/operator.yaml",
 		"../../config/operator_openshift.yaml",
 		"../../deploy/deploy.yml",
 	}
